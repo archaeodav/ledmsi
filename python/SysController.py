@@ -231,7 +231,7 @@ class CameraControl():
             ts = current_time.strftime("%Y-%m-%d-%H%M%S")
         
         return ts
-    
+        
 def main():
     #TODO behaviour for buttons
     # First button calls acquire stack
@@ -243,5 +243,18 @@ def main():
     
     
 if __name__ == ('__main__'):
-    main()
+    c = CameraControl()
+    
+    method = sys.argv[1]
+    
+    if method == '--c':
+        c.calibrate()
+        
+    elif method == '--s':
+        odir = sys.argv[2]
+        
+        fname = sys.argv[3]
+        
+        c.acquire_stack(odir, fname)
+    
     
