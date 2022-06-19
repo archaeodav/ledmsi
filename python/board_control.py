@@ -14,7 +14,7 @@ import os
 class LightArray():
     ''' Class controls light array '''
     def __init__(self,
-                 device, #location of the device
+                 device='/dev/ttyUSB0', #location of the device
                  array_definition=None #array definition dict
                  ):
         

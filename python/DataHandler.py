@@ -2,7 +2,7 @@
 """
 Created on Wed May 11 11:21:39 2022
 
-@author: au526889
+@author: adav
 """
 
 import os
@@ -13,7 +13,7 @@ import numpy as np
 
 import glob
 
-import rawpy
+#import rawpy
 
 
 #import board_control
@@ -35,14 +35,22 @@ class ImagingSystem():
         if calibration is None:
             calib_dir = os.path.join(os.path.join(os.path.dirname(__file__),'calibrations'))
             
-            files = glob.glob(os.path.join(calib_dir,'*.json'))
+            if os.path.exists(calib_dir):
             
-            calibration = max(files, key=os.path.getctime)
+                files = glob.glob(os.path.join(calib_dir,'*.json'))
+            
+                calibration = max(files, key=os.path.getctime)
+                
+                self.cal = self.load_defs(calibration)
+                
+            else:
+                self.cal = None
             
         self.sys_def = self.load_defs(system_definition)
-        self.cal = self.load_defs(calibration)
+        
         
         self.wl_ordered = self.sysdef['OrderedWavelengths']
+        
         
         
     def load_defs(self,
@@ -155,7 +163,7 @@ class ImageDict(ImagingSystem):
         
         '''
         
-        self.im_dict['Image directory']=self.fname
+        self.im_dict['Image directory']=self.img_dir
         self.im_dict['Calibration']=self.cal
         self.im_dict['Images_DNG']={}
         self.im_dict['Images_JPG']={}
@@ -181,11 +189,16 @@ class ImageDict(ImagingSystem):
         
         '''
         
-        self.im_dict['Images_DNG'][image_wl]=image_wl
+        im_name_root = image_name.split('.')[0]
         
+        
+        self.im_dict['Images_DNG'][image_wl]=im_name_root+'.dng'
+        
+        self.im_dict['Images_JPG'][image_wl]=im_name_root+'.jpg'
     
+   
     
-    
+    """   
     def gen_image_stack_np(self,
                            save_stack=True):
         
@@ -275,3 +288,4 @@ class ImageDict(ImagingSystem):
         stack = np.load(npy_file)
         
         return stack
+    """

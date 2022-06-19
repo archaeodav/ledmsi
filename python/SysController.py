@@ -14,6 +14,8 @@ import json
 
 import datetime
 
+from PIL import Image, ExifTags
+
 
 
 
@@ -21,13 +23,15 @@ class CameraControl():
     ''' class to control the camera'''
     def __init__(self,
                  sys_def=None,
-                 calib = None):
+                 calib = None,
+                 tempdir = None):
         
         
         self.sys_def = sys_def
         
         self.calib = calib
         
+        self.tempdir = tempdir
     
     def init_imgsys(self):
         '''
@@ -52,9 +56,11 @@ class CameraControl():
         system = DataHandler.ImagingSystem(self.sys_def,
                                            self.calib)
         
-        self.layer_def = system.sysdef
+        self.sys_def = system.sysdef
         
         self.calib =  system.calib
+        
+        self.ordered = system.wl_ordered
         
     
     
@@ -74,7 +80,8 @@ class CameraControl():
     
     def calibrate(self,
                   calib_dir = None,
-                  exposure_factor = 4):
+                  exposure_factor = 4,
+                  uv_closest = '365'):
         """
         Method performs a calibration and records this in a JSON file.
         Calibration uses auto exposure for each LED wavelength and records the 
@@ -106,37 +113,92 @@ class CameraControl():
 
         """
         
+        self.calib = {}
+        
+        uv_later = []
+        
         #for wavelength in ordered wavlengths
-            # get method
-            # if method is camera
-                # take a photo
-                #get the exposure 
-            # else
-                # append to a list of UV leds
-                # loop through after the others and calculate using closest wl 
+        for wl in self.ordered:
+            if self.sys_def[wl]['method']=='camera':
+                lights = board_control.LightArray()
+                lights.light_on(self.sys_def[wl]['pin'])
+                
+                oname = os.path.join(self.tempdir,wl+'.jpg')
+                camera_command = 'libcamera-still -n -r --metering average --gain 1 -o %s' %(oname)
+                
+                os.system(camera_command)
+                
+                lights.lights_off()
+                
+                img = Image.open(oname)
+                
+                calib_exp_time = (img._getexif()[33434]*1000000)*exposure_factor
+                
+                self.calib[wl]=calib_exp_time
+                
+            else:
+                if self.sys_def[wl]['method']=='uv':
+                    uv_later.append(wl)
+                
+        for wl in uv_later:
+            self.calib[wl]=self.calib[uv_closest]*9
+            
                 
         # log all this to JSON
         
         if calib_dir is None:
             calib_dir = os.path.join(os.path.dirname(__file__),
                                      'calibrations')
+            
+            if not os.path.exists(calib_dir):
+                os.mkdir(calib_dir)
+                
+        fname = os.path.join(calib_dir,'calib_'+self.timestring()+'.json')
+        
+        with open(fname, 'w') as ofile:
+            json.dump(self.calib,
+                      ofile,
+                      sort_keys=True,
+                      indent=4,
+                      ensure_ascii=False)
+            
+            ofile.close()
+            
+            
                 
         # reload the system def
         self.init_imgsys()
         
-        pass
+        
     
     
-    def acquire_stack(self):
+    def acquire_stack(self,
+                      odir,
+                      fname):
         #for wl in wavelengths ordered
         
-            # get and switch LED
-            #get exposure from calib
-            
-            #set exposure and take photo
-            #pass to Data
+        odata = DataHandler.ImagingSystem(odir, fname)
         
-        pass
+        odata.init_image_stack()
+        
+        for wl in self.ordered:
+            
+            oname = '%s_%s.jpg' %(fname,wl)
+            
+            lights = board_control.LightArray()
+            lights.light_on(self.sys_def[wl]['pin'])
+            
+               
+            camera_command = 'libcamera-still -n -r --shutter %s --gain 1 -o %s' %(str(self.calib[wl]),oname)
+            
+            os.system(camera_command)
+            
+            lights.lights_off()
+            
+            odata.image_data(fname,wl)
+            
+        odata.save_dict()
+                
     
     def take_still(self):
         pass
@@ -177,8 +239,7 @@ def main():
     
     #TODO toggle switch behaviour
     
-    
-    
+    pass
     
     
 if __name__ == ('__main__'):
