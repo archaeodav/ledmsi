@@ -1,260 +1,291 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed May 11 20:33:33 2022
+Created on Wed May 11 11:21:39 2022
 
-@author: dav
+@author: adav
 """
 
 import os
-import DataHandler
-import board_control
 
 import json
 
-import datetime
+import numpy as np
 
-from PIL import Image, ExifTags
+import glob
+
+#import rawpy
 
 
+#import board_control
 
 
-class CameraControl():
-    ''' class to control the camera'''
+class ImagingSystem():
     def __init__(self,
-                 sys_def=None,
-                 calib = None,
-                 tempdir = None):
+                 system_definition=None,
+                 calibration=None):
         
+        '''Init method loads the imaging system defintion, and the most recent 
+        calibration file for the system'''
         
-        self.sys_def = sys_def
-        
-        self.calib = calib
-        
-        self.tempdir = tempdir
-    
-    def init_imgsys(self):
-        '''
-        method initiates an ImagingSystem object from DataHandler.
-        
-        This approach is chosen rather than inheriting ImagingSystem or in the
-        init method of this class becasue we need to be able to redefine this 
-        object after calibration.
-        
-        
-        Paramaters
-        -------
-        None
-        
-        Returns
-        -------
-        None
-        
-        '''
-        
-        
-        system = DataHandler.ImagingSystem(self.sys_def,
-                                           self.calib)
-        
-        self.sys_def = system.sysdef
-        
-        self.calib =  system.calib
-        
-        self.ordered = system.wl_ordered
-        
-    
-    
-    def preview(self):
-        '''
-        method turns on the white led and provides a preview image to adjust 
-        focus, framing etc
-        
-        Paramaters
-        -------
-        
-        Returns
-        -------
-        
-        '''
-        pass
-    
-    def calibrate(self,
-                  calib_dir = None,
-                  exposure_factor = 4,
-                  uv_closest = '365'):
-        """
-        Method performs a calibration and records this in a JSON file.
-        Calibration uses auto exposure for each LED wavelength and records the 
-        value to file
-        
-        It's presumed the target will be a white reflector, so the exposure 
-        will be increased using the exposure factor
-        
-        The UV-C & UV-B flourescence leds are outside the camera sensitivity and 
-        present a problem as we can't use the camera to perform the calibration. 
-        We'll approximate exposure time for these using the output of the shortest 
-        visible wavelength and a power factor based on the number of LEDs * wattage
-        
-        I anticipate using a UV sensor to do this, but this will take a bit of 
-        tuning
-        
-        Paramaters
-        -------
-        calib_dir : str
-            directory to contain the calibration file
+        # if no defintion is provided load a default from the current directory
+        if system_definition is None:
+            system_definition = os.path.join(os.path.dirname(__file__),'system_definition.json')
             
-        exposure_factor : float
-            exposure correction 
-
-        Returns
-        -------
-        str
-            calibration file path.
-
-        """
-        
-        self.calib = {}
-        
-        uv_later = []
-        
-        #for wavelength in ordered wavlengths
-        for wl in self.ordered:
-            if self.sys_def[wl]['method']=='camera':
-                lights = board_control.LightArray()
-                lights.light_on(self.sys_def[wl]['pin'])
+        # if no calibration exists load the most recent from the default calibration directory
+        if calibration is None:
+            calib_dir = os.path.join(os.path.join(os.path.dirname(__file__),'calibrations'))
+            
+            if os.path.exists(calib_dir):
+            
+                files = glob.glob(os.path.join(calib_dir,'*.json'))
+            
+                calibration = max(files, key=os.path.getctime)
                 
-                oname = os.path.join(self.tempdir,wl+'.jpg')
-                camera_command = 'libcamera-still -n -r --metering average --gain 1 -o %s' %(oname)
-                
-                os.system(camera_command)
-                
-                lights.lights_off()
-                
-                img = Image.open(oname)
-                
-                calib_exp_time = (img._getexif()[33434]*1000000)*exposure_factor
-                
-                self.calib[wl]=calib_exp_time
+                self.cal = self.load_defs(calibration)
                 
             else:
-                if self.sys_def[wl]['method']=='uv':
-                    uv_later.append(wl)
-                
-        for wl in uv_later:
-            self.calib[wl]=self.calib[uv_closest]*9
+                self.cal = None
             
-                
-        # log all this to JSON
+        self.sys_def = self.load_defs(system_definition)
         
-        if calib_dir is None:
-            calib_dir = os.path.join(os.path.dirname(__file__),
-                                     'calibrations')
+        
+        self.wl_ordered = self.sys_def['OrderedWavelengths']
+        
+        
+        
+    def load_defs(self,
+                  json_file):
+        
+        # method to load JSON files
+        with open(json_file, 'r') as infile:
+            odict = json.load(infile)
             
-            if not os.path.exists(calib_dir):
-                os.mkdir(calib_dir)
-                
-        fname = os.path.join(calib_dir,'calib_'+self.timestring()+'.json')
+        return odict
+
+class ImageDict(ImagingSystem):
+    def __init__(self,
+                 odir,
+                 fname_root,
+                 defs = None,
+                 calib = None):
         
-        with open(fname, 'w') as ofile:
-            json.dump(self.calib,
+        '''
+        Method initiates to the ImageDict object. First intites the system 
+        defintion as we'll need this to set up the data structure, then sets up 
+        the output directories and filenames
+        
+        Parameters
+        -------
+        odir: str
+            path of output directory
+        fname_root: str
+            file name for image stack. uses this to create the directory to 
+            contain the image stack if it doesn't exist'
+        defs : str
+            layer defintion json file
+        calib: str
+            calibration directory file
+            
+        Returns
+        -------
+        None
+        
+        '''
+        
+        #intitiate ImagingSystem object                
+        super().__init__(defs,calib)
+        
+        self.odir = odir
+        
+        self.fname = fname_root
+        
+        self.img_dir = os.path.join(self.odir,self.fname)
+        
+        if not os.path.exists(self.fname):
+            os.mkdir(self.img_dir)
+            
+        self.im_dict = {}
+        
+        self.imdict_json = os.path.join(self.img_dir,self.fname+'.json')
+        
+    def load_imdict(self):
+        '''
+        Method loads im_dict from disk.
+        
+        Parameters
+        -------
+        None
+            
+        Returns
+        -------
+        None 
+        '''
+        
+        with open(self.imdict_json, 'r') as infile:
+            self.im_dict = json.load(infile)
+    
+    def save_dict(self):
+        '''
+        Method saves im_dict to a json file.
+        
+        Parameters
+        -------
+        None
+            
+        Returns
+        -------
+        None
+        
+        '''
+        
+        with open(self.imdict_json, 'w') as ofile:
+            json.dump(self.im_dict,
                       ofile,
                       sort_keys=True,
                       indent=4,
                       ensure_ascii=False)
             
             ofile.close()
-            
-            
-                
-        # reload the system def
-        self.init_imgsys()
-        
-        
     
-    
-    def acquire_stack(self,
-                      odir,
-                      fname):
-        #for wl in wavelengths ordered
-        
-        odata = DataHandler.ImagingSystem(odir, fname)
-        
-        odata.init_image_stack()
-        
-        for wl in self.ordered:
             
-            oname = '%s_%s.jpg' %(fname,wl)
-            
-            lights = board_control.LightArray()
-            lights.light_on(self.sys_def[wl]['pin'])
-            
-               
-            camera_command = 'libcamera-still -n -r --shutter %s --gain 1 -o %s' %(str(self.calib[wl]),oname)
-            
-            os.system(camera_command)
-            
-            lights.lights_off()
-            
-            odata.image_data(fname,wl)
-            
-        odata.save_dict()
-                
-    
-    def take_still(self):
-        pass
-    
-    def timestring(self,
-                   long = False):
+    def init_image_stack(self):
         
         '''
-        method returns current date / time as a string for making unique 
-        filenames
+        Method initiates a new im_dict 
         
-        Paramaters
+        Parameters
         -------
-        long : bool
-            if long include microseconds, else just seconds
+        None
+            
+        Returns
+        -------
+        None
+        
+        '''
+        
+        self.im_dict['Image directory']=self.img_dir
+        self.im_dict['Calibration']=self.cal
+        self.im_dict['Images_DNG']={}
+        self.im_dict['Images_JPG']={}
+        
+    
+    def image_data(self,
+                   image_name,
+                   image_wl):        
+        
+        '''
+        Method appends image to the ImageDict object.
+        
+        Parameters
+        -------
+        image_name: str
+            filename of the saved image
+        image_wl: str
+            wavelength designation of the image
+            
+        Returns
+        -------
+        None
+        
+        '''
+        
+        im_name_root = image_name.split('.')[0]
+        
+        
+        self.im_dict['Images_DNG'][image_wl]=im_name_root+'.dng'
+        
+        self.im_dict['Images_JPG'][image_wl]=im_name_root+'.jpg'
+    
+   
+    
+    """   
+    def gen_image_stack_np(self,
+                           save_stack=True):
+        
+        '''
+        Method converts images to a numpy array and saves them as a *.npy file,
+        saves a pointer to this array in the image dict
+        
+        Parameters
+        -------
+        save_stack : bool
+            save the image stack to disk?
+            
+        Returns
+        -------
+        ndarray
+        
+        '''
+        
+        stack = None
+        
+        for wl in self.wl_ordered:
+            im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
+        
+            if stack is None:
+                stack = im
+                
+            else:
+                stack = np.dstack((stack,im))
+                
+        if save_stack is True:
+            npy = self.fname+'.npy'
+            np.save(os.path.join(self.img_dir,npy),stack)
+            self.im_dict['Numpy_stack']=npy
+             
+             
+        return stack
+            
+            
+    
+    def convert_raw(self,
+                    image,
+                    wl):
+    
+        '''
+        Method converts 12bit DNG to 16 bit linear tiff.
+        
+        NOTE: Uses the rawpy library which seems flaky on M1 OSX. As a reuslt we'll
+        look at alternatives
+        
+        Parameters
+        -------
+        image : str
+            path to image
+        wl : str
+            wavelength designation string
         
         Returns
         -------
-        str
-            datetime string
-        
+        ndarray
         '''
         
-        current_time = datetime.datetime.now()
+        with rawpy.imread(image) as raw:
+            rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+            
         
-        if long is True:
-            ts = current_time.strftime("%Y-%m-%d-%H%M%S-%f")
-    
-        else:
-            ts = current_time.strftime("%Y-%m-%d-%H%M%S")
+        return rgb
         
-        return ts
         
-def main():
-    #TODO behaviour for buttons
-    # First button calls acquire stack
-    # second button does calibration
     
-    #TODO toggle switch behaviour
-    
-    pass
-    
-    
-if __name__ == ('__main__'):
-    c = CameraControl()
-    
-    method = sys.argv[1]
-    
-    if method == '--c':
-        c.calibrate()
+    def load_image_stack(self):
         
-    elif method == '--s':
-        odir = sys.argv[2]
         
-        fname = sys.argv[3]
+        '''
+        Method loads numpy image stack.
         
-        c.acquire_stack(odir, fname)
-    
-    
+        Parameters
+        -------
+        None
+            
+            
+        Returns
+        -------
+        ndarray
+        
+        '''
+        npy_file = os.path.join(self.img_dir,self.im_dict['Numpy_stack'])
+        stack = np.load(npy_file)
+        
+        return stack
+    """
