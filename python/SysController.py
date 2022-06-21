@@ -178,8 +178,27 @@ class CameraControl():
     
     def acquire_stack(self,
                       odir,
-                      fname):
+                      fname,
+                      auto_id = True):
         #for wl in wavelengths ordered
+        
+        if auto_id is True:
+            ids = os.listdir(os.path.join(odir,fname))
+            ids_int = []
+            for i in ids:
+                try:
+                    n = int(i.split('.')[0].split('_')[-1])
+                    ids_int.append(n)
+                except(ValueError):
+                    ids_int.append(-1)
+                    
+            last_id = max(ids_int)
+            
+            if not last_id == -1:
+                fname= '%s_%s' %(fname,last_id)
+            else:
+                fname = '%s_0' %(fname)
+                        
         
         odata = DataHandler.ImageDict(odir,fname)
         
