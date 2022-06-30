@@ -84,7 +84,8 @@ class CameraControl():
     def calibrate(self,
                   calib_dir = None,
                   exposure_factor = 4,
-                  uv_closest = '365'):
+                  uv_closest = '365',
+                  gain = 1):
         """
         Method performs a calibration and records this in a JSON file.
         Calibration uses auto exposure for each LED wavelength and records the 
@@ -127,7 +128,7 @@ class CameraControl():
                 self.lights.light_on(self.sys_def[wl]['pin'])
                 
                 oname = os.path.join(self.tempdir,wl+'.jpg')
-                camera_command = 'libcamera-still -n -r --metering average --gain 1 -o %s' %(oname)
+                camera_command = 'libcamera-still -n -r --metering average --gain %s -o %s' %(str(gain),oname)
                 
                 os.system(camera_command)
                 
@@ -169,14 +170,10 @@ class CameraControl():
                       ensure_ascii=False)
             
             ofile.close()
-            
-            
                 
         # reload the system def
         self.init_imgsys()
         
-        
-    
     
     def acquire_stack(self,
                       odir,
@@ -219,7 +216,7 @@ class CameraControl():
             self.lights.light_on(self.sys_def[wl]['pin'])
             
                
-            camera_command = 'libcamera-still -n -r --shutter %s --gain 1 --immediate -o %s' %(str(self.calib[wl]),oname)
+            camera_command = 'libcamera-still -n -r --shutter %s --gain %s --immediate -o %s' %(str(self.calib[wl]),str(self.calib['gain']),oname)
             
             os.system(camera_command)
             
