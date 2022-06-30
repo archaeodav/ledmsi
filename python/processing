@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jun 21 18:00:10 2022
+
+@author: dav
+"""
+
+
+import numpy as np
+
+import os
+
+import rawpy
+
+from DataHandler import ImageDict
+
+from sklearn.decomposition import PCA
+
+from skimage.color import rgb2hsv
+
+class ArrayHandler(ImageDict):
+    def __init__(self,
+                 odir,
+                 fname):
+        
+        
+        super().__init__(odir, fname)
+        
+        
+                
+    def gen_image_stack_np(self,
+                           save_stack=True):
+         
+         '''
+         Method converts images to a numpy array and saves them as a *.npy file,
+         saves a pointer to this array in the image dict
+         
+         Parameters
+         -------
+         save_stack : bool
+             save the image stack to disk?
+             
+         Returns
+         -------
+         ndarray
+         
+         '''
+         
+         stack = None
+         
+         
+         
+         for wl in self.wl_ordered:
+             im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
+         
+             if stack is None:
+                 stack = im
+                 
+             else:
+                 stack = np.dstack((stack,im))
+                 
+         if save_stack is True:
+             npy = self.fname+'.npy'
+             np.save(os.path.join(self.img_dir,npy),stack)
+             self.im_dict['Numpy_stack']=npy
+             self.save_dict()
+              
+              
+         return stack
+             
+             
+     
+    def convert_raw(self,
+                     image,
+                     wl):
+     
+         '''
+         Method converts 12bit DNG to 16 bit linear tiff.
+         
+         NOTE: Uses the rawpy library which seems flaky on M1 OSX. As a reuslt we'll
+         look at alternatives
+         
+         Parameters
+         -------
+         image : str
+             path to image
+         wl : str
+             wavelength designation string
+         
+         Returns
+         -------
+         ndarray
+         '''
+         
+         with rawpy.imread(image) as raw:
+             rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+             
+         
+         return rgb
+         
+         
+     
+    def load_image_stack(self):
+         
+         
+         '''
+         Method loads numpy image stack.
+         
+         Parameters
+         -------
+         None
+             
+             
+         Returns
+         -------
+         ndarray
+         
+         '''
+         npy_file = os.path.join(self.img_dir,self.im_dict['Numpy_stack'])
+         stack = np.load(npy_file)
+         
+         return stack
+     
+    def reshape_stack(self,
+                      stack):
+        
+        reshaped = np.reshape(stack,
+                              ((stack.shape[0]*stack.shape[1]),
+                              stack.shape[2]))
+        
+        return reshaped
+    
+    def reshaped_to_rast(self,
+                         stack,
+                         dims,
+                         reshaped):
+        
+        rast = np.reshape(reshaped,
+                          (stack.shape[0],
+                           stack.shape[1],
+                           dims))
+        
+        return rast
+                              
+     
+        
+    def animate(self,
+                stack = None):
+        """
+        Method animates the image stack
+        """
+        pass         
+
+    def monochrome(self):
+        """
+        Method creates a stack of average luminance from the RGB channels in the
+        image stack
+        
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        pass
+    
+    def get_im_dims(self,
+                    stack):
+        x,y = stack.shape()[0:2]
+        
+        return x,y
+        
+    
+    def stack_pca(self,
+                  stack,
+                  n_comp = 9):
+        
+    
+        
+        pca = PCA(n_components=n_comp)
+        
+        x = self.reshape_stack(stack)
+        
+        pca.fit(x)
+        
+        predict = pca.transform(x)
+        
+        out = self.reshaped_to_rast(stack,n_comp,predict)
+        
+        return out
+    
+    def tohsv(self,
+              image):
+        hsv = rgb2hsv(image)
+        
+        return hsv
+    
+    def meanhsv(self,
+                image):
+        
+        h = self.tohsv(image)
+        
+        mean = np.mean(h[:,:,0])
+        
+        return mean
+    
+    def h_diff(self,
+               image,
+               calib_image):
+        
+        c_h = self.meanhsv(calib_image)
+        
+        h = self.hsv(image)
+        
+        #atan2(sin(x-y), cos(x-y))
+        
+        diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
+        
+        return diff
+
+class Results(ArrayHandler):
+    def __init__(self,
+                 odir,
+                 fname):
+        super().__init__(odir, fname)
+        
+    def make_plot(self):
+        pass
+    
+    def plot_h_diff(self):
+        pass
+        
+    def plot_pca(self):
+        pass
+    
+    def save_plot(self):
+        pass
+    
+    
+    
+    

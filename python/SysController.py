@@ -63,6 +63,8 @@ class CameraControl():
         
         self.ordered = system.wl_ordered
         
+        self.lights = board_control.LightArray()
+        
     
     
     def preview(self):
@@ -121,15 +123,15 @@ class CameraControl():
         #for wavelength in ordered wavlengths
         for wl in self.ordered:
             if self.sys_def[wl]['method']=='camera':
-                lights = board_control.LightArray()
-                lights.light_on(self.sys_def[wl]['pin'])
+                
+                self.lights.light_on(self.sys_def[wl]['pin'])
                 
                 oname = os.path.join(self.tempdir,wl+'.jpg')
                 camera_command = 'libcamera-still -n -r --metering average --gain 1 -o %s' %(oname)
                 
                 os.system(camera_command)
                 
-                lights.lights_off()
+                self.lights.lights_off()
                 
                 img = Image.open(oname)
                 
@@ -210,15 +212,18 @@ class CameraControl():
             
             oname = os.path.join(odir,fname,im_name)
             
-            lights = board_control.LightArray()
-            lights.light_on(self.sys_def[wl]['pin'])
+            #TODO call board control from __init__ rather than here- it
+            # takes a few seconds to initiate the connection
+            
+            
+            self.lights.light_on(self.sys_def[wl]['pin'])
             
                
-            camera_command = 'libcamera-still -n -r --shutter %s --gain 1 -o %s' %(str(self.calib[wl]),oname)
+            camera_command = 'libcamera-still -n -r --shutter %s --gain 1 --immediate -o %s' %(str(self.calib[wl]),oname)
             
             os.system(camera_command)
             
-            lights.lights_off()
+            self.lights.lights_off()
             
             odata.image_data(fname,wl)
            
