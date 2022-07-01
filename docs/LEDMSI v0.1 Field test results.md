@@ -15,7 +15,7 @@ This document summarises what we learned from the first field trials of the LEDM
 
 ***Cost:*** 1-2 Days coding
 ### Not enough user feedback 
-**The problem:** There's not enough feedback provided to the end user on progress / status. This is both an audio and visual problem- the camera is covered by lightproof material it's difficult for the user to know that it's finished.  
+**The problem:** There's not enough feedback provided to the end user on progress / status. This is both an audio and visual problem- when the camera is covered by lightproof material it's difficult for the user to know that it's finished.  
 
 
 **Solutions:**
