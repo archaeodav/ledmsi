@@ -25,7 +25,7 @@ This document summarises what we learned from the first field trials of the LEDM
 
 ***Cost:*** 0.5 days. Buzzer DKK 20. 
 
-###Poor thermal management
+### Poor thermal management
 
 **The problem:** At Sorte Muld enough heat was generated that the system went into thermal shutdown. Furthermore the 3D printed material of the case shrank, meaning that the touch screen no longer fitted in its pocket. This is likely a problem with using the system facing down, as all heat is trapped by this part and was likely exacerbated by the system being covered by black plastic on a sunny day. 
 
