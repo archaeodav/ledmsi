@@ -14,7 +14,7 @@ This document summarises what we learned from the first field trials of the LEDM
 5. Increase gain to reduce exposure times.
 
 ***Cost:*** 1-2 Days coding
-### Not enough user feedback ###
+### Not enough user feedback 
 **The problem:** There's not enough feedback provided to the end user on progress / status. This is both an audio and visual problem- the camera is covered by lightproof material it's difficult for the user to know that it's finished.  
 
 
@@ -26,7 +26,7 @@ This document summarises what we learned from the first field trials of the LEDM
 ***Cost:*** 0.5 days. Buzzer DKK 20.
 
 
-###Poor heat management###
+###Poor heat management
 **The problem:** At Sorte Muld enough heat was generated that the system went into thermal shutdown. Furthermore the 3D printed material of the case shrank, meaning that the touch screen no longer fitted in its pocket. This is likely a problem with using the system facing down, as all heat is trapped by this part and was likely exacerbated by the system being covered by black plastic on a sunny day. 
 
 **Solutions:**
@@ -37,7 +37,7 @@ This document summarises what we learned from the first field trials of the LEDM
 
 ***Cost:*** 0.5 days. Fan DKK 50.
 
-### Masking ambient light ###
+### Masking ambient light 
 **The problem:** Minor light leaks are caused by interface between the frame holding the lightproof fabric and uneven surfaces. 
 
 **Solutions:**
@@ -58,7 +58,7 @@ This document summarises what we learned from the first field trials of the LEDM
 
 ## Requiring Redesign ##
 
-### Poor fluorescence performance###
+### Poor fluorescence performance
 **The problem:** Curently most of the fluorescence contribution to the images is overwhelmed by reflectance. We need to better discretise the flourescence contribution to luminance. Currently we're attempting to identify this by using the offset between hue angles- which may be enough to determine which filters are useful.
 
 **Solutions:**
