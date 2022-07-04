@@ -34,6 +34,8 @@ class CameraControl():
         self.calib = calib
         
         self.tempdir = tempdir
+        
+        self.lights = board_control.LightArray()
     
     def init_imgsys(self):
         '''
@@ -63,8 +65,7 @@ class CameraControl():
         
         self.ordered = system.wl_ordered
         
-        self.lights = board_control.LightArray()
-        
+       
     
     
     def preview(self):
@@ -117,6 +118,13 @@ class CameraControl():
 
         """
         
+        if calib_dir is None:
+            calib_dir = os.path.join(os.path.dirname(__file__),
+                                     'calibrations')
+            
+            if not os.path.exists(calib_dir):
+                os.mkdir(calib_dir)
+        
         self.calib = {}
         
         uv_later = []
@@ -127,7 +135,9 @@ class CameraControl():
                 
                 self.lights.light_on(self.sys_def[wl]['pin'])
                 
-                oname = os.path.join(self.tempdir,wl+'.jpg')
+                f = '%s_%s.jpg' %(self.timestring(),wl)
+                
+                oname = os.path.join(calib_dir,f)
                 camera_command = 'libcamera-still -n -r --metering average --gain %s -o %s' %(str(gain),oname)
                 
                 os.system(camera_command)
@@ -143,6 +153,8 @@ class CameraControl():
                 
                 self.calib[wl]=int(calib_exp_time)
                 
+                self.calb['%s_image' %(wl)] = f
+                
             else:
                 if self.sys_def[wl]['method']=='uv':
                     uv_later.append(wl)
@@ -152,13 +164,6 @@ class CameraControl():
             
                 
         # log all this to JSON
-        
-        if calib_dir is None:
-            calib_dir = os.path.join(os.path.dirname(__file__),
-                                     'calibrations')
-            
-            if not os.path.exists(calib_dir):
-                os.mkdir(calib_dir)
                 
         fname = os.path.join(calib_dir,'calib_'+self.timestring()+'.json')
         
