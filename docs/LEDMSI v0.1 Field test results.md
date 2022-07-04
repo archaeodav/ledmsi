@@ -1,6 +1,9 @@
 # LEDMSI v0.1 Design notes: Field test results
 ## Summary
 This document summarises what we learned from the first field trials of the LEDMSI system in June 2022 at Ginnerup and Sorte Muld.
+
+(issues #1, #2, #3 & #4)
+
 ## Easy fixes
 ### The system is too slow
 **The problem:** It takes nearly 5 minutes to acquire the full image stack. This is too long.  
@@ -17,6 +20,7 @@ This document summarises what we learned from the first field trials of the LEDM
 ### Not enough user feedback 
 **The problem:** There's not enough feedback provided to the end user on progress / status. This is both an audio and visual problem- when the camera is covered by lightproof material it's difficult for the user to know that it's finished.  
 
+(Issue #5)
 
 **Solutions:**
   
