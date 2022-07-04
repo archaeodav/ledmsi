@@ -6,17 +6,22 @@ Created on Wed May 11 20:33:33 2022
 @author: dav
 """
 
-import os
+
 import DataHandler
 import board_control
 
 import json
-
+import os
 import datetime
+
+import subprocess
+import signal
 
 from PIL import Image, ExifTags
 
 import sys
+
+
 
 
 
@@ -64,11 +69,10 @@ class CameraControl():
         self.calib =  system.cal
         
         self.ordered = system.wl_ordered
-        
-       
     
     
-    def preview(self):
+    def preview(self,
+                preview_led = "white"):
         '''
         method turns on the white led and provides a preview image to adjust 
         focus, framing etc
@@ -80,7 +84,27 @@ class CameraControl():
         -------
         
         '''
-        pass
+        
+        pin = self.sys_def[preview_led]["pin"]
+        
+        self.lights.light_on(pin)
+        
+        cmd = 'libcamera-hello -t 0'
+        
+        p = subprocess.Popen(cmd, 
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             shell=True, 
+                             preexec_fn=os.setsid)
+        
+        input('Hit the anykey to quit')
+        
+        os.killpg(os.getpgid(p.pid),
+                  signal.SIGTERM)
+        
+        self.lights.lights_off()
+        
+        return 'Done!'
     
     def calibrate(self,
                   calib_dir = None,
@@ -290,5 +314,8 @@ if __name__ == ('__main__'):
         fname = sys.argv[3]
         
         c.acquire_stack(odir, fname)
+        
+    elif method == '--p':
+        c.preview()
     
     
