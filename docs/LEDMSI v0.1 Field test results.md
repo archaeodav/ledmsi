@@ -59,6 +59,14 @@ This document summarises what we learned from the first field trials of the LEDM
 
 ***Cost:*** 2 days. 200 DKK for aluminium
 
+### Focus is too fiddly
+**The problem:** Setting focus is too hard- this is both a software and a hardware problem. First- to set the focus we have to enable the preview via `libcamera-hello` and turn on the white LEDs via `LightArray().light_on()`. Second the camera focus controls are difficult to access because they're inside the light cone.
+
+**Solutions:**
+
+1. Add a method to `CameraControl` to turn on the LEDs and enable the preview.
+2. Add an actuator to set the focus from the outside of the system. Not sure how to do it- either via cogs or possibly with a toothed belt
+
 
 ## Requiring Redesign ##
 
