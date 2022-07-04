@@ -22,10 +22,6 @@ from PIL import Image, ExifTags
 import sys
 
 
-
-
-
-
 class CameraControl():
     ''' class to control the camera'''
     def __init__(self,
@@ -318,4 +314,11 @@ if __name__ == ('__main__'):
     elif method == '--p':
         c.preview()
     
+    else:
+        print("To run SysController you need to use one of the following flags:\n",
+              "   --c run the calibration routine\n",
+              "   --s acquire an image stack with the following additional parameters:\n",
+              "      output directory\n",
+              "      image stack name\n",
+              "   --p preview")
     
