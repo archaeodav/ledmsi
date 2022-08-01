@@ -19,6 +19,156 @@ from sklearn.decomposition import PCA
 
 from skimage.color import rgb2hsv
 
+
+class rgb_image():
+    def __init__(self,
+                 image):
+        
+        self.image = None
+        
+        self.hsv = None
+        
+        if type(image) is str:
+            self.image = self.convert_raw(image)
+            
+        elif type(image) is np.ndarry:
+            self.image = image
+            
+        if self.hsv is None:
+            self.hsv = tohsv(self.image)
+            
+        
+        
+    def convert_raw(self,
+                    image):
+     
+         '''
+         Method converts 12bit DNG to 16 bit linear tiff.
+         
+         NOTE: Uses the rawpy library which seems flaky on M1 OSX. As a reuslt we'll
+         look at alternatives
+         
+         Parameters
+         -------
+         image : str
+             path to image
+         wl : str
+             wavelength designation string
+         
+         Returns
+         -------
+         ndarray
+         '''
+         
+         with rawpy.imread(image) as raw:
+             rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+             
+         
+         return rgb
+     
+     
+    def tohsv(self,
+               image):
+         
+         """
+         Method converts image to Hue saturation Value
+         
+         Parameters
+         -------
+         image : np.ndarray rgb image
+        
+
+         Returns
+         -------
+         ndarray.
+
+         """
+     
+         hsv = rgb2hsv(image)
+         
+         return hsv
+     
+    def meanhsv(self,
+                 rgb=None,
+                 hsv=None):
+         
+         """
+         Method converts image to get mean hue value from rgb
+         
+         Parameters
+         -------
+         image : np.ndarray rgb image
+        
+
+         Returns
+         -------
+         ndarray.
+
+         """
+         
+         if not rgb is None:
+             h = self.tohsv(image)
+             h = h[:,:,0]
+             
+         elif not hsv is None:
+             h = hsv[:,:,0]
+             
+         else:
+             raise Exception('Specify either an RGB or HSV array')
+                 
+         
+         mean = np.mean(h)
+         
+         return mean
+     
+    def h_diff(self,
+                image = None,
+                hsv = None,
+                calib_image = None):
+         
+         if not image is None:
+             h = self.hsv(image)
+             
+         elif not hsv is None:
+             h = hsv
+             
+         else:
+              raise Exception('Specify either an RGB or HSV array')
+         
+         if not calib_imag is None:
+             c_h = self.meanhsv(rgb = calib_image)
+         else:
+             c_h = self.meanhsv(hsv=h)
+         
+         #atan2(sin(x-y), cos(x-y))
+         
+         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
+         
+         return diff
+     
+    def h_treshold(self,
+                    hsv,
+                    method = 'otsu',
+                    threshold = None):
+         
+         h = hsv[:,:,0]
+         
+         if method == 'otsu':
+             pass
+         
+         elif threshold is not None:
+             
+             
+             
+     
+    def h_to_rgb(self,
+                  hsv_image,
+                  threshold):
+         pass
+     
+        
+        
+
 class ArrayHandler(ImageDict):
     def __init__(self,
                  odir,
@@ -69,38 +219,7 @@ class ArrayHandler(ImageDict):
               
          return stack
              
-             
-     
-    def convert_raw(self,
-                     image,
-                     wl):
-     
-         '''
-         Method converts 12bit DNG to 16 bit linear tiff.
-         
-         NOTE: Uses the rawpy library which seems flaky on M1 OSX. As a reuslt we'll
-         look at alternatives
-         
-         Parameters
-         -------
-         image : str
-             path to image
-         wl : str
-             wavelength designation string
-         
-         Returns
-         -------
-         ndarray
-         '''
-         
-         with rawpy.imread(image) as raw:
-             rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
-             
-         
-         return rgb
-         
-         
-     
+
     def load_image_stack(self):
          
          
@@ -191,34 +310,7 @@ class ArrayHandler(ImageDict):
         
         return out
     
-    def tohsv(self,
-              image):
-        hsv = rgb2hsv(image)
-        
-        return hsv
     
-    def meanhsv(self,
-                image):
-        
-        h = self.tohsv(image)
-        
-        mean = np.mean(h[:,:,0])
-        
-        return mean
-    
-    def h_diff(self,
-               image,
-               calib_image):
-        
-        c_h = self.meanhsv(calib_image)
-        
-        h = self.hsv(image)
-        
-        #atan2(sin(x-y), cos(x-y))
-        
-        diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
-        
-        return diff
 
 class Results(ArrayHandler):
     def __init__(self,
