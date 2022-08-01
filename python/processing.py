@@ -20,13 +20,11 @@ from sklearn.decomposition import PCA
 from skimage.color import rgb2hsv
 
 
-class rgb_image():
+class RGBimage():
     def __init__(self,
                  image):
         
         self.image = None
-        
-        self.hsv = None
         
         if type(image) is str:
             self.image = self.convert_raw(image)
@@ -34,10 +32,6 @@ class rgb_image():
         elif type(image) is np.ndarry:
             self.image = image
             
-        if self.hsv is None:
-            self.hsv = tohsv(self.image)
-            
-        
         
     def convert_raw(self,
                     image):
@@ -66,6 +60,14 @@ class rgb_image():
          
          return rgb
      
+class HSVimage():     
+
+    def __init__(self,
+                 rgb_array):
+        
+        self.hsv = self.tohsv(rgb_array)
+        
+        self.mean_hue = self.meanhsv()
      
     def tohsv(self,
                image):
@@ -88,43 +90,14 @@ class rgb_image():
          
          return hsv
      
-    def meanhsv(self,
-                 rgb=None,
-                 hsv=None):
-         
-         """
-         Method converts image to get mean hue value from rgb
-         
-         Parameters
-         -------
-         image : np.ndarray rgb image
-        
+    def meanhsv(self):
 
-         Returns
-         -------
-         ndarray.
-
-         """
-         
-         if not rgb is None:
-             h = self.tohsv(image)
-             h = h[:,:,0]
-             
-         elif not hsv is None:
-             h = hsv[:,:,0]
-             
-         else:
-             raise Exception('Specify either an RGB or HSV array')
-                 
-         
-         mean = np.mean(h)
+         mean = np.mean(self.hsv[:,:,0])
          
          return mean
      
     def h_diff(self,
-                image = None,
-                hsv = None,
-                calib_image = None):
+               calib_image = None):
          
          if not image is None:
              h = self.hsv(image)
