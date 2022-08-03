@@ -99,23 +99,17 @@ class HSVimage():
     def h_diff(self,
                calib_image = None):
          
-         if not image is None:
-             h = self.hsv(image)
-             
-         elif not hsv is None:
-             h = hsv
-             
-         else:
-              raise Exception('Specify either an RGB or HSV array')
          
          if not calib_imag is None:
-             c_h = self.meanhsv(rgb = calib_image)
+             calib_image = RGBimage(calib_image).image 
+             c_h = HSVimage(calib_image).mean_hue
+             
          else:
-             c_h = self.meanhsv(hsv=h)
+             c_h = self.mean_hue
          
          #atan2(sin(x-y), cos(x-y))
          
-         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
+         diff = np.arctan2(np.sin(self.hsv[:,:,0]-c_h),np.cos(self.hsv[:,:,0]-c_h))
          
          return diff
      
@@ -134,7 +128,7 @@ class HSVimage():
              
              
      
-    def h_to_rgb(self,
+     def h_to_rgb(self,
                   hsv_image,
                   threshold):
          pass
