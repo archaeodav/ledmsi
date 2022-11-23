@@ -15,12 +15,20 @@ import rawpy
 
 from DataHandler import ImageDict
 
+
+
 from sklearn.decomposition import PCA
 
+
+from skimage import io
+
 from skimage.color import rgb2hsv
+from skimage.color import hsv2rgb
+from skimage.color import rgb2gray
 
 from skimage.filters import threshold_otsu
-
+from skimage.filters import threshold_mean
+from skimage.filters import threshold_li
 
 class RGBimage():
     def __init__(self,
@@ -29,7 +37,11 @@ class RGBimage():
         self.image = None
         
         if type(image) is str:
-            self.image = self.convert_raw(image)
+            if image.endswith('.dng'):
+                self.image = self.convert_raw(image)
+            elif image.endswith('.jpg') or image.endswith('.tif'):
+                self.image = self.load_image()
+                
             
         elif type(image) is np.ndarry:
             self.image = image
@@ -67,6 +79,8 @@ class HSVimage():
     def __init__(self,
                  rgb_array):
         
+        self.rgb = rgb_array
+        
         self.hsv = self.tohsv(rgb_array)
         
         self.mean_hue = self.meanhsv()
@@ -102,7 +116,7 @@ class HSVimage():
                calib_image = None):
          
          
-         if not calib_imag is None:
+         if not calib_image is None:
              calib_image = RGBimage(calib_image).image 
              c_h = HSVimage(calib_image).mean_hue
              
@@ -116,27 +130,73 @@ class HSVimage():
          return diff
      
     def h_treshold(self,
-                    hsv,
+                    h,
                     method = 'otsu',
                     threshold = None):
-         
-         h = hsv[:,:,0]
-         
-         if method == 'otsu':
-             pass
-         
-         elif threshold is not None:
+        
+        if method == 'otsu':
+             threshold = threshold_otsu(h)
              
+        elif method == 'mean':
+            threshold = threshold_mean(h)
+            
+        elif method == 'li':
+            threshold = threshold_li(h)
+            
+        elif threshold is not None:
+             threshold = threshold
+             
+        return threshold
              
              
      
-     def h_to_rgb(self,
+    def h_to_rgb(self,
                   hsv_image,
                   threshold):
-         pass
+        
+        rgb = hsv2rgb(hsv_image)
+        
+        return rgb
+    
+    def fluo_image(self):
+        
+        # desaturate rgb
+        desaturated = rgb2gray(self.rgb)
+        
+        
+        diff = self.h_diff()
+        
+        thresh = self.h_threshold(diff)
+        
+        fl  = diff > thresh
+        
+        gr = desaturated
+        
+        gg = desaturated
+        
+        gb = desaturated
+        
+        r = self.rgb[:,:,0]
+        
+        g = self.rgb[:,:,1]
+        
+        b = self.rgb[:,:,2]
+        
+        gr[fl]=r[fl]
+        
+        gr[fl]=r[fl]
+        
+        gr[fl]=r[fl]
+        
+        
+        
+        # threshold
+        
+        
+        
+        pass
      
-        
-        
+
 
 class ArrayHandler(ImageDict):
     def __init__(self,
