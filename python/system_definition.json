@@ -1,0 +1,99 @@
+{
+    "250": {
+        "method": "uv",
+        "pin": 52
+    },
+    "270": {
+        "method": "uv",
+        "pin": 53
+    },
+    "310": {
+        "method": "uv",
+        "pin": 51
+    },
+    "365": {
+        "method": "camera",
+        "pin": 41
+    },
+    "395": {
+        "method": "camera",
+        "pin": 45
+    },
+    "410": {
+        "method": "camera",
+        "pin": 43
+    },
+    "450": {
+        "method": "camera",
+        "pin": 32
+    },
+    "470": {
+        "method": "camera",
+        "pin": 31
+    },
+    "480": {
+        "method": "camera",
+        "pin": 34
+    },
+    "505": {
+        "method": "camera",
+        "pin": 36
+    },
+    "525": {
+        "method": "camera",
+        "pin": 30
+    },
+    "590": {
+        "method": "camera",
+        "pin": 33
+    },
+    "605": {
+        "method": "camera",
+        "pin": 35
+    },
+    "630": {
+        "method": "camera",
+        "pin": 37
+    },
+    "660": {
+        "method": "camera",
+        "pin": 40
+    },
+    "740": {
+        "method": "camera",
+        "pin": 38
+    },
+    "850": {
+        "method": "camera",
+        "pin": 39
+    },
+    "940": {
+        "method": "camera",
+        "pin": 42
+    },
+    "OrderedWavelengths": [
+        "white",
+        "940",
+        "850",
+        "740",
+        "660",
+        "630",
+        "605",
+        "590",
+        "525",
+        "505",
+        "480",
+        "470",
+        "450",
+        "410",
+        "395",
+        "365",
+        "310",
+        "270",
+        "250"
+    ],
+    "white": {
+        "method": "camera",
+        "pin": 44
+    }
+}

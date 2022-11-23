@@ -79,7 +79,7 @@ class HSVimage():
     def __init__(self,
                  rgb_array):
         
-        self.rgb = rgb_array
+        self.rgb = RGBimage(rgb_array).image
         
         self.hsv = self.tohsv(rgb_array)
         
@@ -147,8 +147,6 @@ class HSVimage():
              threshold = threshold
              
         return threshold
-             
-             
      
     def h_to_rgb(self,
                   hsv_image,
@@ -184,19 +182,23 @@ class HSVimage():
         
         gr[fl]=r[fl]
         
-        gr[fl]=r[fl]
+        gg[fl]=g[fl]
         
-        gr[fl]=r[fl]
+        gb[fl]=b[fl]
         
+        fluo = np.dstack((gr,gg,gb))
         
-        
-        # threshold
-        
-        
-        
-        pass
+        return fluo
      
-
+class FluoStack():
+    def __init__(self,
+                 indir):
+        
+        flou_dict = []
+        
+        for file in indir:
+            band_name = file.split('_')[-1].split('.')[0]
+        
 
 class ArrayHandler(ImageDict):
     def __init__(self,
