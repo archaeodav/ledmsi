@@ -19,6 +19,8 @@ from sklearn.decomposition import PCA
 
 from skimage.color import rgb2hsv
 
+from skimage.filters import threshold_otsu
+
 
 class RGBimage():
     def __init__(self,

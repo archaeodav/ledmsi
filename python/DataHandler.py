@@ -13,7 +13,7 @@ import numpy as np
 
 import glob
 
-#import rawpy
+import rawpy
 
 
 #import board_control
@@ -198,7 +198,7 @@ class ImageDict(ImagingSystem):
     
    
     
-    """   
+       
     def gen_image_stack_np(self,
                            save_stack=True):
         
@@ -288,4 +288,4 @@ class ImageDict(ImagingSystem):
         stack = np.load(npy_file)
         
         return stack
-    """
+    
