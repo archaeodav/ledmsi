@@ -13,7 +13,7 @@ import numpy as np
 
 import glob
 
-import rawpy
+
 
 
 #import board_control
@@ -199,93 +199,3 @@ class ImageDict(ImagingSystem):
    
     
        
-    def gen_image_stack_np(self,
-                           save_stack=True):
-        
-        '''
-        Method converts images to a numpy array and saves them as a *.npy file,
-        saves a pointer to this array in the image dict
-        
-        Parameters
-        -------
-        save_stack : bool
-            save the image stack to disk?
-            
-        Returns
-        -------
-        ndarray
-        
-        '''
-        
-        stack = None
-        
-        for wl in self.wl_ordered:
-            im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
-        
-            if stack is None:
-                stack = im
-                
-            else:
-                stack = np.dstack((stack,im))
-                
-        if save_stack is True:
-            npy = self.fname+'.npy'
-            np.save(os.path.join(self.img_dir,npy),stack)
-            self.im_dict['Numpy_stack']=npy
-             
-             
-        return stack
-            
-            
-    
-    def convert_raw(self,
-                    image,
-                    wl):
-    
-        '''
-        Method converts 12bit DNG to 16 bit linear tiff.
-        
-        NOTE: Uses the rawpy library which seems flaky on M1 OSX. As a reuslt we'll
-        look at alternatives
-        
-        Parameters
-        -------
-        image : str
-            path to image
-        wl : str
-            wavelength designation string
-        
-        Returns
-        -------
-        ndarray
-        '''
-        
-        with rawpy.imread(image) as raw:
-            rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
-            
-        
-        return rgb
-        
-        
-    
-    def load_image_stack(self):
-        
-        
-        '''
-        Method loads numpy image stack.
-        
-        Parameters
-        -------
-        None
-            
-            
-        Returns
-        -------
-        ndarray
-        
-        '''
-        npy_file = os.path.join(self.img_dir,self.im_dict['Numpy_stack'])
-        stack = np.load(npy_file)
-        
-        return stack
-    
