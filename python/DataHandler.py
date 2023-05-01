@@ -101,7 +101,7 @@ class ImageDict(ImagingSystem):
         
         self.img_dir = os.path.join(self.odir,self.fname)
         
-        if not os.path.exists(self.fname):
+        if not os.path.exists(self.img_dir):
             os.mkdir(self.img_dir)
             
         self.im_dict = {}
@@ -192,9 +192,11 @@ class ImageDict(ImagingSystem):
         im_name_root = image_name.split('.')[0]
         
         
-        self.im_dict['Images_DNG'][image_wl]=im_name_root+'.dng'
+        self.im_dict['Images_DNG'][image_wl]= '%s_%s.dng' %(im_name_root,
+                                                            image_wl)
         
-        self.im_dict['Images_JPG'][image_wl]=im_name_root+'.jpg'
+        self.im_dict['Images_JPG'][image_wl]='%s_%s.jpg' %(im_name_root,
+                                                           image_wl)
     
    
     

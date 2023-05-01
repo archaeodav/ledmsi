@@ -40,11 +40,13 @@ class RGBimage():
             if image.endswith('.dng'):
                 self.image = self.convert_raw(image)
             elif image.endswith('.jpg') or image.endswith('.tif'):
-                self.image = self.load_image()
+                self.image = io.imread(image)
                 
             
         elif type(image) is np.ndarry:
             self.image = image
+            
+        print (self.image.shape)
             
         
     def convert_raw(self,
@@ -81,7 +83,7 @@ class HSVimage():
         
         self.rgb = RGBimage(rgb_array).image
         
-        self.hsv = self.tohsv(rgb_array)
+        self.hsv = self.tohsv(self.rgb)
         
         self.mean_hue = self.meanhsv()
      
@@ -101,6 +103,8 @@ class HSVimage():
          ndarray.
 
          """
+         
+         print (image)
      
          hsv = rgb2hsv(image)
          
@@ -127,9 +131,9 @@ class HSVimage():
          
          diff = np.arctan2(np.sin(self.hsv[:,:,0]-c_h),np.cos(self.hsv[:,:,0]-c_h))
          
-         return diff
+         return np.abs(diff)
      
-    def h_treshold(self,
+    def h_threshold(self,
                     h,
                     method = 'otsu',
                     threshold = None):
@@ -167,12 +171,19 @@ class HSVimage():
         thresh = self.h_threshold(diff)
         
         fl  = diff > thresh
-        
+        '''
         gr = desaturated
         
         gg = desaturated
         
         gb = desaturated
+        '''
+        
+        g = np.zeros(self.rgb.shape,dtype=np.uint8)
+        
+        gr = g[:,:,0]
+        gg = g[:,:,1]
+        gb = g[:,:,2]
         
         r = self.rgb[:,:,0]
         
@@ -208,6 +219,9 @@ class ArrayHandler(ImageDict):
         
         super().__init__(odir, fname)
         
+        self.load_imdict()
+        
+        
         
                 
     def gen_image_stack_np(self,
@@ -233,8 +247,13 @@ class ArrayHandler(ImageDict):
          
          
          for wl in self.wl_ordered:
-             im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
-         
+            
+             image = '%s_%s_%s.dng' %(self.odir,self.fname,wl)
+            
+             #im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
+             
+             im = self.convert_raw(image)
+             
              if stack is None:
                  stack = im
                  
@@ -341,8 +360,6 @@ class ArrayHandler(ImageDict):
         
         return out
     
-    
-
 class Results(ArrayHandler):
     def __init__(self,
                  odir,
@@ -360,6 +377,7 @@ class Results(ArrayHandler):
     
     def save_plot(self):
         pass
+    
     
     
     
