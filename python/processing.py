@@ -18,6 +18,7 @@ from DataHandler import ImageDict
 
 
 from sklearn.decomposition import PCA
+from sklearn.decomposition import KernelPCA
 
 
 from skimage import io
@@ -25,6 +26,8 @@ from skimage import io
 from skimage.color import rgb2hsv
 from skimage.color import hsv2rgb
 from skimage.color import rgb2gray
+
+from skimage.exposure import equalize_hist
 
 from skimage.filters import threshold_otsu
 from skimage.filters import threshold_mean
@@ -247,12 +250,20 @@ class ArrayHandler(ImageDict):
          
          
          for wl in self.wl_ordered:
+             
+             print (self.odir, self.fname)
             
-             image = '%s_%s_%s.dng' %(self.odir,self.fname,wl)
+              
+            
+             image = '%s_%s.dng' %(self.fname,wl)
+             
+             image = os.path.join(self.odir,self.fname,image)
             
              #im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
              
-             im = self.convert_raw(image)
+             print (image)
+             
+             im = RGBimage(image).image
              
              if stack is None:
                  stack = im
@@ -321,7 +332,8 @@ class ArrayHandler(ImageDict):
         """
         pass         
 
-    def monochrome(self):
+    def monochrome(self,
+                   stack):
         """
         Method creates a stack of average luminance from the RGB channels in the
         image stack
@@ -333,18 +345,72 @@ class ArrayHandler(ImageDict):
 
         """
         
-        pass
+        mono = np.average(stack,axis = 2)
+        
+        return mono
     
     def get_im_dims(self,
                     stack):
         x,y = stack.shape()[0:2]
         
         return x,y
+    
+    def compositor(self,
+                   stack,
+                   bands):
         
+        out  = None
+        
+        for b in bands:
+            band =  equalize_hist(stack[:,:,b])
+            
+            if out is None:
+                out = band
+            else:
+                out = np.dstack((out,band))
+                
+        out = self.monochrome(out)
+        
+        return out
+     
+        
+    def fluo_comp(self,
+                  stack,
+                  uv_r=[45,42],
+                  b_g=[37,34,31],
+                  g_rb=[26,22],
+                  r_all=[19,16,13],
+                  ir_all=[10,11,7]):
+       
+        nir_comp = self.compositor(stack,ir_all)
+        r_comp = self.compositor(stack,r_all)
+        g_comp = self.compositor(stack,g_rb)
+        b_comp = self.compositor(stack,b_g)
+        uv_comp = self.compositor(stack,uv_r)
+        
+        return nir_comp,r_comp,g_comp,b_comp,uv_comp
+        
+    
+    
+    def bin_refl_composites(self,
+                            stack,
+                            nir=[3,5,6,8,9,],
+                            r=[12,15,18,21],
+                            g=[25,28,22],
+                            b=[32,35,38,41],
+                            uv=[44,47]):
+        
+        nir_comp = self.compositor(stack,nir)
+        r_comp = self.compositor(stack,r)
+        g_comp = self.compositor(stack,g)
+        b_comp = self.compositor(stack,b)
+        uv_comp = self.compositor(stack,uv)
+        
+        return nir_comp,r_comp,g_comp,b_comp,uv_comp
     
     def stack_pca(self,
                   stack,
-                  n_comp = 9):
+                  n_comp = 25):
         
     
         
@@ -356,9 +422,31 @@ class ArrayHandler(ImageDict):
         
         predict = pca.transform(x)
         
+        cov = pca.get_covariance()
+        
         out = self.reshaped_to_rast(stack,n_comp,predict)
         
-        return out
+        return out, cov
+    
+    def stack_kpca(self,
+                   stack,
+                   n_comp = 25):
+        
+    
+        
+        pca = KernelPCA(n_components=n_comp)
+        
+        x = self.reshape_stack(stack)
+        
+        pca.fit(x)
+        
+        predict = pca.transform(x)
+        
+        cov = pca.get_covariance()
+        
+        out = self.reshaped_to_rast(stack,n_comp,predict)
+        
+        return out, cov
     
 class Results(ArrayHandler):
     def __init__(self,
