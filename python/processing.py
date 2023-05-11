@@ -46,7 +46,7 @@ class RGBimage():
                 self.image = io.imread(image)
                 
             
-        elif type(image) is np.ndarry:
+        elif type(image) is np.ndarray:
             self.image = image
             
         print (self.image.shape)
@@ -228,7 +228,8 @@ class ArrayHandler(ImageDict):
         
                 
     def gen_image_stack_np(self,
-                           save_stack=True):
+                           save_stack=True,
+                           rotate=3):
          
          '''
          Method converts images to a numpy array and saves them as a *.npy file,
@@ -270,7 +271,10 @@ class ArrayHandler(ImageDict):
                  
              else:
                  stack = np.dstack((stack,im))
-                 
+          
+         if rotate > 0:
+             stack = np.rot90(stack,rotate)
+          
          if save_stack is True:
              npy = self.fname+'.npy'
              np.save(os.path.join(self.img_dir,npy),stack)
