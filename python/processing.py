@@ -76,8 +76,8 @@ class RGBimage():
          '''
          
          with rawpy.imread(image) as raw:
-             rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
-             
+             #rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+             rgb = raw.postprocess(gamma=(2.2,4.5), output_bps=16)
          
          return rgb
      
@@ -304,13 +304,13 @@ class FluoStack(ImageDict):
             self.save_stack(hstack, 'hue')
             self.save_stack(sstack, 'sat')
             self.save_stack(sstack, 'val')
-            self.save_stack(himdiff, 'hue_diff')
+            self.save_stack(hdiff, 'hue_diff')
               
               
          return hstack,vstack,sstack,hdiff
      
     def save_stack(self,stack,stack_name):
-         npy = '%s_%s_%s' %(self.fname,stack_name,'.npy')
+         npy = '%s_%s%s' %(self.fname,stack_name,'.npy')
          np.save(os.path.join(self.img_dir,npy),stack)
          
     def mean_hue(self,h):
@@ -331,7 +331,7 @@ class FluoStack(ImageDict):
          
          diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
          
-         return diff
+         return np.abs(diff)
      
         
 
@@ -392,6 +392,8 @@ class ArrayHandler(ImageDict):
                  
              else:
                  stack = np.dstack((stack,im))
+                 
+         print(stack.shape)
           
          if rotate > 0:
              stack = np.rot90(stack,rotate)
@@ -596,9 +598,13 @@ class Results(ArrayHandler):
     
 def run_comps(indir):
     for d in os.listdir(indir):
+        print (d)
         if os.path.isdir(os.path.join(indir,d)):
             a = ArrayHandler(indir, d)
-            stack = a.gen_image_stack_np(save_stack=False)
+            print(a)
+            stack = a.gen_image_stack_np(save_stack=True)
+            print(stack)
+            
             refl = a.bin_refl_composites(stack,r=[15,18,21])
             fluo = a.fluo_comp(stack)
             
@@ -614,12 +620,15 @@ def run_comps(indir):
                             equalize_hist(refl[2]),
                             equalize_hist(fluo[4])))
             
+            print (reflc,uvirc,fluoc)
             
-            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb'.tif), 
+            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb.tif'), 
                       reflc)
             
-            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv'.tif), 
+            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv.tif'), 
                       uvirc)
             
-            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf'.tif), 
+            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf.tif'), 
                       fluoc)
+            
+            del(a)
