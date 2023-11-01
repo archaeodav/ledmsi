@@ -76,8 +76,8 @@ class RGBimage():
          '''
          
          with rawpy.imread(image) as raw:
-             #rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
-             rgb = raw.postprocess(gamma=(2.2,4.5), output_bps=16)
+             rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+             #rgb = raw.postprocess(gamma=(2.2,4.5), output_bps=16)
          
          return rgb
      
@@ -577,7 +577,58 @@ class ArrayHandler(ImageDict):
         return out, cov
     
     #def plot_pca_cov()
+
+class SampleMasks():
+    def __init__(self):
+        self.masks = None
+        
+    def load_masks_from_json(self,
+                             json_file,
+                             im_dir,
+                             img_col_key='_via_img_metadata'):
+        
+        json_dict = None
+        
+        
+        with open(json_file,'r') as infile:
+            json_dict = json.load(infile)
+            
+            
+        for k in json_dict[img_col_key].keys():
+            img_key = k
+            regions = json_dict[img_col_key][k]['regions']
+            
+            for r in regions:
+                if not k in self.masks:
+                    self.masks[k]={}
+                
+                geom_type = regions[r]['shape_attributes']['name']
+                rclass = regions[r]['region_attributes']['Type']
+                
+                
+                
+    def sample_masks(self,
+                     img,
+                     mtype,
+                     mask):
+        
+        
     
+    def output_samples(self).:
+        pass
+    
+    def lda(self):
+        pass
+    
+    def hists(self):
+        pass
+    
+    def lda_plot(self):
+        pass
+        
+    def hist_plot(self):
+        pass
+
 class Results(ArrayHandler):
     def __init__(self,
                  odir,
