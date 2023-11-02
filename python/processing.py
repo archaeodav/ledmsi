@@ -33,7 +33,9 @@ from skimage.filters import threshold_otsu
 from skimage.filters import threshold_mean
 from skimage.filters import threshold_li
 
-from skimage import io
+from skimage.draw import polygon2mask
+
+import json
 
 class RGBimage():
     def __init__(self,
@@ -581,6 +583,8 @@ class ArrayHandler(ImageDict):
 class SampleMasks():
     def __init__(self):
         self.masks = None
+        self.im_dir = None
+        self.samples = {}
         
     def load_masks_from_json(self,
                              json_file,
@@ -589,6 +593,7 @@ class SampleMasks():
         
         json_dict = None
         
+        self.im_dir = im_dir
         
         with open(json_file,'r') as infile:
             json_dict = json.load(infile)
@@ -603,19 +608,72 @@ class SampleMasks():
                     self.masks[k]={}
                 
                 geom_type = regions[r]['shape_attributes']['name']
-                rclass = regions[r]['region_attributes']['Type']
+                rclass = regions[r]['region_attributes']['Type'].strip('\n')
+                
+                if geom_type == 'rect':
+                    x = regions[r]['shape_attributes']['x']
+                    y = regions[r]['shape_attributes']['y']
+                    w = regions[r]['shape_attributes']['width']
+                    h = regions[r]['shape_attributes']['height']
+                    
+                    poly = [(x,y),
+                            (x+w,y),
+                            (x+w,y+h),
+                            (x,y+h)]
+                    
+                elif geom_type == 'polygon':
+                    poly = []
+                    
+                    x = regions[r]['shape_attributes']['all_points_x']
+                    y = regions[r]['shape_attributes']['all_points_y']
+                    
+                    for i in range(0,len(x)-1):
+                        poly.append((x[i],y[i]))
+                        
+                else:
+                    pass
+                    
+                if not rclass+'_polys' in self.masks[k]:
+                    self.masks[k][rclass+'_polys']=[]
+                    
+                self.masks[k][rclass+'_polys'].append(poly)
                 
                 
                 
     def sample_masks(self,
-                     img,
-                     mtype,
                      mask):
         
-        
+        for img in os.listdir(self.im_dir):
+            if img.endswith('jpg'):
+                im = os.path.join(self.im_dir,img)
+                dims = io.imread(im).shape
+                
+                for c in self.masks[img]:
+                    individual_masks = []
+                    mask_class = c.split('_')[0]
+                    mask = np.zeros(dims[0:2],dtype=bool)
+                    for poly in self.masks[img][c]:
+                        individual_masks.append(dims,
+                                                poly)
+                    for m in individual_masks:
+                        mask = mask+m
+                    self.masks[img][mask_class]=mask
+                    
     
-    def output_samples(self).:
-        pass
+    def sampler(self,
+                image_mask_names, #list of tuples containg mask name, path to image 
+                ):
+        for mask, image in image_mask_names:
+            if image.endswith('npy'):
+                img = np.open(image)
+            else:
+                img = io.imread(image)
+                    
+            for mclass in self.masks[mask]:
+                if not mclass.endswith('_polys'):
+                    sample = img[self.masks[mask][mclass]]
+                    if not mclass in self.samples:
+                        self.samples[mclass]=sample
     
     def lda(self):
         pass
