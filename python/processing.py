@@ -582,7 +582,7 @@ class ArrayHandler(ImageDict):
 
 class SampleMasks():
     def __init__(self):
-        self.masks = None
+        self.masks = {}
         self.im_dir = None
         self.samples = {}
         
@@ -600,21 +600,26 @@ class SampleMasks():
             
             
         for k in json_dict[img_col_key].keys():
-            img_key = k
+            img_key = k.split('.')[0]+'.jpeg'
             regions = json_dict[img_col_key][k]['regions']
+            print (regions)
+            
+            if not k in self.masks:
+                self.masks[img_key]={}
             
             for r in regions:
-                if not k in self.masks:
-                    self.masks[k]={}
+               
                 
-                geom_type = regions[r]['shape_attributes']['name']
-                rclass = regions[r]['region_attributes']['Type'].strip('\n')
+                geom_type = r['shape_attributes']['name']
+                rclass = r['region_attributes']['Type'].strip('\n')
+                
+                print(rclass)
                 
                 if geom_type == 'rect':
-                    x = regions[r]['shape_attributes']['x']
-                    y = regions[r]['shape_attributes']['y']
-                    w = regions[r]['shape_attributes']['width']
-                    h = regions[r]['shape_attributes']['height']
+                    x = r['shape_attributes']['x']
+                    y = r['shape_attributes']['y']
+                    w = r['shape_attributes']['width']
+                    h = r['shape_attributes']['height']
                     
                     poly = [(x,y),
                             (x+w,y),
@@ -624,19 +629,22 @@ class SampleMasks():
                 elif geom_type == 'polygon':
                     poly = []
                     
-                    x = regions[r]['shape_attributes']['all_points_x']
-                    y = regions[r]['shape_attributes']['all_points_y']
+                    x = r['shape_attributes']['all_points_x']
+                    y = r['shape_attributes']['all_points_y']
                     
                     for i in range(0,len(x)-1):
                         poly.append((x[i],y[i]))
-                        
+                
+                    print('poly')
+                
                 else:
-                    pass
+                    print ('ELSE')
                     
-                if not rclass+'_polys' in self.masks[k]:
-                    self.masks[k][rclass+'_polys']=[]
-                    
-                self.masks[k][rclass+'_polys'].append(poly)
+                if not rclass+'_polys' in self.masks[img_key]:
+                    self.masks[img_key][rclass+'_polys']=[]
+                
+                
+                self.masks[img_key][rclass+'_polys'].append(poly)
                 
                 
                 
@@ -644,28 +652,36 @@ class SampleMasks():
                      mask):
         
         for img in os.listdir(self.im_dir):
-            if img.endswith('jpg'):
+            print (img)
+            if img.endswith('jpeg'):
+                
                 im = os.path.join(self.im_dir,img)
                 dims = io.imread(im).shape
                 
-                for c in self.masks[img]:
+                mask_keys = list(self.masks[img].keys())
+                print (mask_keys)
+                
+                for c in mask_keys:
                     individual_masks = []
                     mask_class = c.split('_')[0]
                     mask = np.zeros(dims[0:2],dtype=bool)
                     for poly in self.masks[img][c]:
-                        individual_masks.append(dims,
-                                                poly)
+                        individual_masks.append(polygon2mask(dims[0:2],
+                                                poly))
                     for m in individual_masks:
+                        print(m.shape)
                         mask = mask+m
                     self.masks[img][mask_class]=mask
+                    print (c,mask.shape)
                     
     
     def sampler(self,
                 image_mask_names, #list of tuples containg mask name, path to image 
                 ):
-        for mask, image in image_mask_names:
+        for m, image in image_mask_names:
+            mask = os.path.split(m)[-1]
             if image.endswith('npy'):
-                img = np.open(image)
+                img = np.load(image)
             else:
                 img = io.imread(image)
                     
@@ -674,6 +690,10 @@ class SampleMasks():
                     sample = img[self.masks[mask][mclass]]
                     if not mclass in self.samples:
                         self.samples[mclass]=sample
+                        
+                    else:
+                        self.samples[mclass]=np.vstack((self.samples[mclass],
+                                                        sample))
     
     def lda(self):
         pass
