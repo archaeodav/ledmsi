@@ -621,10 +621,15 @@ class SampleMasks():
                     w = r['shape_attributes']['width']
                     h = r['shape_attributes']['height']
                     
-                    poly = [(x,y),
+                    '''poly = [(x,y),
                             (x+w,y),
                             (x+w,y+h),
-                            (x,y+h)]
+                            (x,y+h)]'''
+    
+                    poly = [(y,x),
+                            (y,x+w),
+                            (y+h,x+w),
+                            (y+h,x)]
                     
                 elif geom_type == 'polygon':
                     poly = []
@@ -633,7 +638,7 @@ class SampleMasks():
                     y = r['shape_attributes']['all_points_y']
                     
                     for i in range(0,len(x)-1):
-                        poly.append((x[i],y[i]))
+                        poly.append((y[i],x[i]))
                 
                     print('poly')
                 
