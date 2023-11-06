@@ -824,3 +824,40 @@ def test():
                (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6.npy")])
     
     return t
+
+def run_comps(indir):
+    for d in os.listdir(indir):
+        print (d)
+        if os.path.isdir(os.path.join(indir,d)):
+            a = ArrayHandler(indir, d)
+            print(a)
+            stack = a.gen_image_stack_np(save_stack=True)
+            print(stack)
+            
+            refl = a.bin_refl_composites(stack,r=[15,18,21])
+            fluo = a.fluo_comp(stack)
+            
+            reflc=np.dstack((equalize_hist(refl[1]),
+                            equalize_hist(refl[2]),
+                            equalize_hist(refl[3])))
+            
+            uvirc=np.dstack((equalize_hist(refl[0]),
+                            equalize_hist(refl[2]),
+                            equalize_hist(refl[4])))
+            
+            fluoc=np.dstack((equalize_hist(fluo[0]),
+                            equalize_hist(refl[2]),
+                            equalize_hist(fluo[4])))
+            
+            print (reflc,uvirc,fluoc)
+            
+            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb.tif'), 
+                      reflc)
+            
+            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv.tif'), 
+                      uvirc)
+            
+            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf.tif'), 
+                      fluoc)
+            
+            del(a)
