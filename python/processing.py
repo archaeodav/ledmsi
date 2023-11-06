@@ -699,6 +699,90 @@ class SampleMasks():
                     else:
                         self.samples[mclass]=np.vstack((self.samples[mclass],
                                                         sample))
+        return self.samples
+    
+    def sample_prep(self,
+                    classes=[],
+                    feature_names=["R White",
+                                   "G White",
+                                   "B White"
+                                   "R 940nm",
+                                   "G 940nm",
+                                   "B 940nm",
+                                   "R 850nm",
+                                   "G 850nm",
+                                   "B 850nm",
+                                   "R 740nm",
+                                   "G 740nm",
+                                   "B 740nm",
+                                   "R 660nm",
+                                   "G 660nm",
+                                   "B 660nm",
+                                   "R 630nm",
+                                   "G 630nm",
+                                   "B 630nm",
+                                   "R 605nm",
+                                   "G 605nm",
+                                   "B 605nm",
+                                   "R 590nm",
+                                   "G 590nm",
+                                   "B 590nm",
+                                   "R 525nm",
+                                   "G 525nm",
+                                   "B 525nm",
+                                   "R 505nm",
+                                   "G 505nm",
+                                   "B 505nm",
+                                   "R 480nm",
+                                   "G 480nm",
+                                   "B 480nm",
+                                   "R 470nm",
+                                   "G 470nm",
+                                   "B 470nm"
+                                   "R 450nm",
+                                   "G 450nm",
+                                   "B 450nm",
+                                   "R 410nm",
+                                   "G 410nm",
+                                   "B 410nm",
+                                   "R 395nm",
+                                   "G 395nm",
+                                   "B 395nm",
+                                   "R 365nm",
+                                   "G 365nm",
+                                   "B 365nm"]):
+        
+        data = None
+        
+        target = None
+        
+        feature_names = feature_names
+        
+        if len(classes)==0:
+            classes = self.samples.keys()
+            
+        target_no = 0
+        
+        classes = np.array(classes)
+        feature_names = np.array(feature_names)
+            
+        for c in classes:
+            t = np.full(self.samples[c].shape[0],
+                        target_no,
+                        dtype=int)
+            if data is None:
+                data = self.samples[c]
+                target = t
+            
+            else:
+                data = np.vstack((data,self.samples[c]))
+                target = np.vstack((target,t))
+                
+        return data,target,feature_names,classes
+                
+            
+            
+    
     
     def lda(self):
         pass
@@ -730,39 +814,13 @@ class Results(ArrayHandler):
     def save_plot(self):
         pass
     
-def run_comps(indir):
-    for d in os.listdir(indir):
-        print (d)
-        if os.path.isdir(os.path.join(indir,d)):
-            a = ArrayHandler(indir, d)
-            print(a)
-            stack = a.gen_image_stack_np(save_stack=True)
-            print(stack)
-            
-            refl = a.bin_refl_composites(stack,r=[15,18,21])
-            fluo = a.fluo_comp(stack)
-            
-            reflc=np.dstack((equalize_hist(refl[1]),
-                            equalize_hist(refl[2]),
-                            equalize_hist(refl[3])))
-            
-            uvirc=np.dstack((equalize_hist(refl[0]),
-                            equalize_hist(refl[2]),
-                            equalize_hist(refl[4])))
-            
-            fluoc=np.dstack((equalize_hist(fluo[0]),
-                            equalize_hist(refl[2]),
-                            equalize_hist(fluo[4])))
-            
-            print (reflc,uvirc,fluoc)
-            
-            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb.tif'), 
-                      reflc)
-            
-            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv.tif'), 
-                      uvirc)
-            
-            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf.tif'), 
-                      fluoc)
-            
-            del(a)
+def test():
+    s = SampleMasks()
+    s.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
+                           r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+    s.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+    t = s.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1.npy"),
+               (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4.npy"),
+               (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6.npy")])
+    
+    return t
