@@ -20,6 +20,8 @@ from DataHandler import ImageDict
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
 
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
 
 from skimage import io
 
@@ -778,13 +780,19 @@ class SampleMasks():
                 data = np.vstack((data,self.samples[c]))
                 target = np.vstack((target,t))
                 
+            target_no +=1
+                
         return data,target,feature_names,classes
                 
-            
-            
-    
-    
-    def lda(self):
+    def lda(self,
+            data,
+            target,
+            feature_names,
+            classes):
+        
+        clf = LinearDiscriminantAnalysis()
+        clf.fit(data,target)
+        
         pass
     
     def hists(self):
