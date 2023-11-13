@@ -15,7 +15,7 @@ import rawpy
 
 from DataHandler import ImageDict
 
-
+import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
@@ -774,11 +774,13 @@ class SampleMasks():
                         dtype=int)
             if data is None:
                 data = self.samples[c]
+                print (data.shape)
                 target = t
             
             else:
                 data = np.vstack((data,self.samples[c]))
-                target = np.vstack((target,t))
+                print ('t',t.shape,'target',target.shape)
+                target = np.concatenate((target,t),axis=None)
                 
             target_no +=1
                 
@@ -790,10 +792,30 @@ class SampleMasks():
             feature_names,
             classes):
         
-        clf = LinearDiscriminantAnalysis()
-        clf.fit(data,target)
+        clf = LinearDiscriminantAnalysis(n_components=2)
         
-        pass
+        #clf.fit(data,target)
+        
+        lda_x = clf.fit(data,target).transform(data)
+        
+        colors = ["navy", "turquoise", "darkorange","yellowgreen"]
+        
+        plt.figure()
+        for color, i, target_name in zip(colors,
+                                         list(range(0,classes.shape([0]))),
+                                         classes):
+            print (color,i,target_name)
+            
+            plt.scatter(lda_x[target == i, 0], 
+                        lda_x[target == i, 1], 
+                        alpha=0.8, 
+                        color=color, label=target_name)
+            plt.legend(loc="best", shadow=False, scatterpoints=1)
+            plt.title("LDA of IRIS dataset")
+
+        plt.show()
+        
+        
     
     def hists(self):
         pass
@@ -803,7 +825,16 @@ class SampleMasks():
         
     def hist_plot(self):
         pass
-
+    
+    def test(self):
+        self.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
+                               r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+        self.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+        self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1.npy"),
+                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4.npy"),
+                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6.npy")])
+        
+        
 class Results(ArrayHandler):
     def __init__(self,
                  odir,
@@ -821,17 +852,7 @@ class Results(ArrayHandler):
     
     def save_plot(self):
         pass
-    
-def test():
-    s = SampleMasks()
-    s.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
-                           r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-    s.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-    t = s.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1.npy"),
-               (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4.npy"),
-               (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6.npy")])
-    
-    return t
+
 
 def run_comps(indir):
     for d in os.listdir(indir):
