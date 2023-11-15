@@ -705,6 +705,7 @@ class SampleMasks():
     
     def sample_prep(self,
                     classes=[],
+                    n_samples = 10000,
                     feature_names=["R White",
                                    "G White",
                                    "B White"
@@ -769,54 +770,34 @@ class SampleMasks():
         feature_names = np.array(feature_names)
             
         for c in classes:
-            t = np.full(self.samples[c].shape[0],
+            if n_samples is not None:
+                rng = np.random.default_rng()
+                sample = rng.choice(self.samples[c],
+                                    n_samples,
+                                    replace = False)
+                
+            else:
+                sample = self.samples[c]
+                
+            t = np.full(sample.shape[0],
                         target_no,
                         dtype=int)
             if data is None:
-                data = self.samples[c]
+                data = sample
                 print (data.shape)
                 target = t
             
             else:
-                data = np.vstack((data,self.samples[c]))
+                data = np.vstack((data,sample))
                 print ('t',t.shape,'target',target.shape)
                 target = np.concatenate((target,t),axis=None)
+                
                 
             target_no +=1
                 
         return data,target,feature_names,classes
                 
-    def lda(self,
-            data,
-            target,
-            feature_names,
-            classes):
-        
-        clf = LinearDiscriminantAnalysis(n_components=2)
-        
-        #clf.fit(data,target)
-        
-        lda_x = clf.fit(data,target).transform(data)
-        
-        colors = ["navy", "turquoise", "darkorange","yellowgreen"]
-        
-        plt.figure()
-        for color, i, target_name in zip(colors,
-                                         list(range(0,classes.shape([0]))),
-                                         classes):
-            print (color,i,target_name)
-            
-            plt.scatter(lda_x[target == i, 0], 
-                        lda_x[target == i, 1], 
-                        alpha=0.8, 
-                        color=color, label=target_name)
-            plt.legend(loc="best", shadow=False, scatterpoints=1)
-            plt.title("LDA of IRIS dataset")
 
-        plt.show()
-        
-        
-    
     def hists(self):
         pass
     
@@ -833,6 +814,22 @@ class SampleMasks():
         self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1.npy"),
                    (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4.npy"),
                    (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6.npy")])
+        
+    def rgb_test(self):
+        self.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
+                               r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+        self.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+        self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1_comp_rr_gg_bb.tif"),
+                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4_comp_rr_gg_bb.tif"),
+                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6_comp_rr_gg_bb.tif")])
+        
+    def fluo_test(self):
+        self.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
+                               r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+        self.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
+        self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1_hue_diff.npy"),
+                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4_hue_diff.npy"),
+                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6_hue_diff.npy")])
         
         
 class Results(ArrayHandler):
