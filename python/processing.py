@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
+from sklearn.decomposition import fastica
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
@@ -34,6 +35,7 @@ from skimage.exposure import equalize_hist
 from skimage.filters import threshold_otsu
 from skimage.filters import threshold_mean
 from skimage.filters import threshold_li
+from skimage.measure import pearson_corr_coeff
 
 from skimage.draw import polygon2mask
 
@@ -540,6 +542,24 @@ class ArrayHandler(ImageDict):
         
         return nir_comp,r_comp,g_comp,b_comp,uv_comp
     
+    def sackk_ica(self,
+                  stack,
+                  n_components=None):
+        
+        if n_components is None:
+            n_components = stack.shape[-1]
+        
+        
+        K, W, S = fastica(self.reshape_stack(stack),
+                          n_components=12,
+                          whiten='unit-variance')
+        
+        im = self.reshaped_to_rast(stack, 
+                                   n_components,
+                                   S)
+        
+        return im, K, W
+    
     def stack_pca(self,
                   stack,
                   n_comp = 48):
@@ -558,7 +578,7 @@ class ArrayHandler(ImageDict):
         
         out = self.reshaped_to_rast(stack,n_comp,predict)
         
-        return out, cov
+        return out, pca
     
     def stack_kpca(self,
                    stack,
@@ -579,6 +599,38 @@ class ArrayHandler(ImageDict):
         out = self.reshaped_to_rast(stack,n_comp,predict)
         
         return out, cov
+    
+    
+    def pearsons(self,
+                 stack):
+        
+        bands = stack.shape[2]
+        
+        pearsons_matrix_s=None
+        pearsons_matrix_p=None
+        
+        for i in range(bands):
+            s = []
+            p = []
+            for j in range(bands):
+                pcc = pearson_corr_coeff(stack[:,:,i], stack[:,:,j])
+                s.append(pcc[0])
+                p.append[pcc[1]]
+            s = np.ndarray(s)
+            p = np.ndarray(p)
+            
+            if pearsons_matrix_s is None:
+                pearsons_matrix_s = s
+            else:
+                pearsons_matrix_s = np.vstack((pearsons_matrix_s,s))
+                
+            
+            if pearsons_matrix_p is None:
+                pearsons_matrix_p = p
+            else:
+                pearsons_matrix_p = np.vstack((pearsons_matrix_p,p))
+                
+        return np.dstack((pearsons_matrix_s,pearsons_matrix_s))
     
     #def plot_pca_cov()
 
