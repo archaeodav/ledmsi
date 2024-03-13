@@ -542,7 +542,7 @@ class ArrayHandler(ImageDict):
         
         return nir_comp,r_comp,g_comp,b_comp,uv_comp
     
-    def sackk_ica(self,
+    def stack_ica(self,
                   stack,
                   n_components=None):
         
@@ -551,7 +551,7 @@ class ArrayHandler(ImageDict):
         
         
         K, W, S = fastica(self.reshape_stack(stack),
-                          n_components=12,
+                          n_components=n_components,
                           whiten='unit-variance')
         
         im = self.reshaped_to_rast(stack, 
@@ -562,11 +562,12 @@ class ArrayHandler(ImageDict):
     
     def stack_pca(self,
                   stack,
-                  n_comp = 48):
+                  n_components=None):
         
-    
+        if n_components is None:
+            n_components = stack.shape[-1]
         
-        pca = PCA(n_components=n_comp)
+        pca = PCA(n_components=n_components)
         
         x = self.reshape_stack(stack)
         
@@ -576,7 +577,7 @@ class ArrayHandler(ImageDict):
         
         cov = pca.get_covariance()
         
-        out = self.reshaped_to_rast(stack,n_comp,predict)
+        out = self.reshaped_to_rast(stack,n_components,predict)
         
         return out, pca
     
