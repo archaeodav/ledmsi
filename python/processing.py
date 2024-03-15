@@ -22,7 +22,7 @@ from sklearn.decomposition import KernelPCA
 from sklearn.decomposition import fastica
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-
+from sklearn.preprocessing import MinMaxScaler
 
 from skimage import io
 
@@ -212,135 +212,7 @@ class HSVimage():
         
         return fluo
      
-class FluoStack(ImageDict):
-    def __init__(self,
-                 odir,
-                 fname):
-        
-       super().__init__(odir, fname)
-       
-       self.load_imdict()
-       
-   
-    def gen_fluo_stack_np(self,
-                          save_stacks=True,
-                          rotate=3):
-         
-         '''
-         Method converts images to a numpy array and saves them as a *.npy file,
-         saves a pointer to this array in the image dict
-         
-         Parameters
-         -------
-         save_stack : bool
-             save the image stack to disk?
-             
-         Returns
-         -------
-         ndarray
-         
-         '''
-         
-         hstack = None
-         sstack = None
-         vstack = None
-         
-         hdiff = None
-         
 
-         
-         for wl in self.wl_ordered:
-             
-             print (self.odir, self.fname)
-            
-              
-            
-             image = '%s_%s.dng' %(self.fname,wl)
-             
-             image = os.path.join(self.odir,self.fname,image)
-            
-             #im = self.convert_raw(self.im_dict['Images_DNG'][wl],wl)
-             
-             print (image)
-             
-             im = RGBimage(image).image
-             
-             
-             
-             hsvim = rgb2hsv(im)
-             
-             him = hsvim[:,:,0] 
-             sim = hsvim[:,:,1]
-             vim = hsvim[:,:,2]
-             
-             himdiff = self.h_diff(him)
-             
-             if hstack is None:
-                 hstack = him
-                 
-             else:
-                 hstack = np.dstack((hstack,him))
-                 
-             if sstack is None:
-                 sstack = sim
-                 
-             else:
-                 sstack = np.dstack((sstack,sim))
-                 
-             if vstack is None:
-                 vstack = vim
-                 
-             else:
-                 vstack = np.dstack((vstack,vim))
-                 
-             if hdiff is None:
-                 hdiff = himdiff
-                
-             else:
-                 hdiff = np.dstack((hdiff,himdiff))
-                 
-                 
-          
-         if rotate > 0:
-             hstack = np.rot90(hstack,rotate)
-             sstack = np.rot90(sstack,rotate)
-             vstack = np.rot90(vstack,rotate)
-             hdiff = np.rot90(hdiff,rotate)
-
-          
-         if save_stacks is True:
-            self.save_stack(hstack, 'hue')
-            self.save_stack(sstack, 'sat')
-            self.save_stack(sstack, 'val')
-            self.save_stack(hdiff, 'hue_diff')
-              
-              
-         return hstack,vstack,sstack,hdiff
-     
-    def save_stack(self,stack,stack_name):
-         npy = '%s_%s%s' %(self.fname,stack_name,'.npy')
-         np.save(os.path.join(self.img_dir,npy),stack)
-         
-    def mean_hue(self,h):
-
-         mean = np.mean(h)
-         
-         return mean
-     
-    def h_diff(self,
-               h,
-               calib_image = None):
-         
-         
-        
-         c_h = self.mean_hue(h)
-         
-         #atan2(sin(x-y), cos(x-y))
-         
-         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
-         
-         return np.abs(diff)
-     
         
 
 class ArrayHandler(ImageDict):
