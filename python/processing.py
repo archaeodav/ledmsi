@@ -265,6 +265,8 @@ class FluoStack(ImageDict):
              
              im = RGBimage(image).image
              
+             
+             
              hsvim = rgb2hsv(im)
              
              him = hsvim[:,:,0] 
@@ -583,11 +585,12 @@ class ArrayHandler(ImageDict):
     
     def stack_kpca(self,
                    stack,
-                   n_comp = 25):
+                   n_components=None):
         
-    
+        if n_components is None:
+            n_components = stack.shape[-1]
         
-        pca = KernelPCA(n_components=n_comp)
+        pca = KernelPCA(n_components=n_components)
         
         x = self.reshape_stack(stack)
         
@@ -597,9 +600,9 @@ class ArrayHandler(ImageDict):
         
         cov = pca.get_covariance()
         
-        out = self.reshaped_to_rast(stack,n_comp,predict)
+        out = self.reshaped_to_rast(stack,n_components,predict)
         
-        return out, cov
+        return out, pca
     
     
     def pearsons(self,
