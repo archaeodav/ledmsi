@@ -82,7 +82,9 @@ class RGBimage():
          '''
          
          with rawpy.imread(image) as raw:
+             # original
              rgb = raw.postprocess(gamma=(1,1), no_auto_bright=True, output_bps=16)
+             #test
              #rgb = raw.postprocess(gamma=(2.2,4.5), output_bps=16)
          
          return rgb

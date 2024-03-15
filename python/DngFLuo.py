@@ -91,7 +91,7 @@ class FluoStack(ImageDict):
              
              im = RGBimage(image).image
              
-             im = self.rescale(im)
+             #im = self.rescale(im)
              
              hsvim = rgb2hsv(im)
              
@@ -148,7 +148,9 @@ class FluoStack(ImageDict):
          np.save(os.path.join(self.img_dir,npy),stack)
          
     def mean_hue(self,h):
-
+         
+         # = np.median(h)
+         
          mean = np.mean(h)
          
          return mean
@@ -163,9 +165,13 @@ class FluoStack(ImageDict):
          
          #atan2(sin(x-y), cos(x-y))
          
-         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
+         #diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
          
+         diff = h-c_h
+         
+         #return np.abs(diff)
          return np.abs(diff)
+
 
     def reshape_stack(self,
                       stack):
@@ -194,12 +200,12 @@ class FluoStack(ImageDict):
         #print (rgb_image.shape)
         
         
-        #reshaped = self.reshape_stack(rgb_image)
+        reshaped = self.reshape_stack(rgb_image)
         
         #print (reshaped.shape)
         
         
-        out = None
+        '''out = None
         
         for band in range(rgb_image.shape[-1]):
             
@@ -210,8 +216,53 @@ class FluoStack(ImageDict):
                 out = data
                 
             else:
-                out = np.dstack((out,data))
+                out = np.dstack((out,data))'''
+                
+        scaler = MinMaxScaler(feature_range=(0,255))
+        out = scaler.fit_transform(reshaped)
         
-        #out = self.reshaped_to_rast(rgb_image, 3, out)
+        out = self.reshaped_to_rast(rgb_image, 3, out)
         
         return out
+    
+    def stack_ica(self,
+                  stack,
+                  n_components=None):
+        
+        if n_components is None:
+            n_components = stack.shape[-1]
+        
+        
+        K, W, S = fastica(self.reshape_stack(stack),
+                          n_components=n_components,
+                          whiten='unit-variance',
+                          tol=0.002,
+                          max_iter=600,
+                          whiten_solver='eigh')
+        
+        im = self.reshaped_to_rast(stack, 
+                                   n_components,
+                                   S)
+        
+        return im, K, W
+    
+    def stack_pca(self,
+                  stack,
+                  n_components=None):
+        
+        if n_components is None:
+            n_components = stack.shape[-1]
+        
+        pca = PCA(n_components=n_components)
+        
+        x = self.reshape_stack(stack)
+        
+        pca.fit(x)
+        
+        predict = pca.transform(x)
+        
+        cov = pca.get_covariance()
+        
+        out = self.reshaped_to_rast(stack,n_components,predict)
+        
+        return out, pca
