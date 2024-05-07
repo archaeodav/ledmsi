@@ -30,6 +30,8 @@ from skimage.color import rgb2hsv
 from skimage.color import hsv2rgb
 from skimage.color import rgb2gray
 
+from skimage.restoration import denoise_bilateral
+
 from skimage.exposure import equalize_hist
 
 from skimage.filters import threshold_otsu
@@ -332,7 +334,21 @@ class ArrayHandler(ImageDict):
                            dims))
         
         return rast
-                              
+                        
+    def denoise(self,
+                stack):
+        
+        out = None
+        
+        for i in range(stack.shape[2]):
+            denoised=denoise_bilateral(stack[:,:,i])
+            
+            if out is None:
+                out = denoised
+            else:
+                out = np.dstack((out,denoised))
+                
+        return out
      
         
     def animate(self,
@@ -428,7 +444,8 @@ class ArrayHandler(ImageDict):
         
         K, W, S = fastica(self.reshape_stack(stack),
                           n_components=n_components,
-                          whiten='unit-variance')
+                          whiten='unit-variance',
+                          tol = 0.01)
         
         im = self.reshaped_to_rast(stack, 
                                    n_components,
@@ -634,7 +651,6 @@ class SampleMasks():
         return self.samples
     
     def sample_prep(self,
-                    classes=[],
                     n_samples = 10000,
                     feature_names=["R White",
                                    "G White",
@@ -683,7 +699,11 @@ class SampleMasks():
                                    "B 395nm",
                                    "R 365nm",
                                    "G 365nm",
-                                   "B 365nm"]):
+                                   "B 365nm"],
+                        classes = ['Layer below ash layer',
+                                  'Layer above ash layer',
+                                  'Ash layer',
+                                  'Corpolite']):
         
         data = None
         
@@ -697,6 +717,7 @@ class SampleMasks():
         target_no = 0
         
         classes = np.array(classes)
+        print(classes)
         feature_names = np.array(feature_names)
             
         for c in classes:
@@ -733,7 +754,7 @@ class SampleMasks():
     
     def lda_plot(self):
         pass
-        
+
     def hist_plot(self):
         pass
     

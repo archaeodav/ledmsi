@@ -91,7 +91,7 @@ class FluoStack(ImageDict):
              
              im = RGBimage(image).image
              
-             #im = self.rescale(im)
+             im = self.rescale(im)
              
              hsvim = rgb2hsv(im)
              
@@ -149,9 +149,9 @@ class FluoStack(ImageDict):
          
     def mean_hue(self,h):
          
-         # = np.median(h)
+         mean = np.median(h)
          
-         mean = np.mean(h)
+         #mean = np.mean(h)
          
          return mean
      
@@ -169,7 +169,6 @@ class FluoStack(ImageDict):
          
          diff = h-c_h
          
-         #return np.abs(diff)
          return np.abs(diff)
 
 
@@ -201,7 +200,6 @@ class FluoStack(ImageDict):
         
         
         reshaped = self.reshape_stack(rgb_image)
-        
         #print (reshaped.shape)
         
         
@@ -236,7 +234,7 @@ class FluoStack(ImageDict):
         K, W, S = fastica(self.reshape_stack(stack),
                           n_components=n_components,
                           whiten='unit-variance',
-                          tol=0.002,
+                          tol=0.01,
                           max_iter=600,
                           whiten_solver='eigh')
         

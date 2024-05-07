@@ -18,16 +18,7 @@ def subset_components(stack,
     
     names = []
     
-    drop_list = [11,
-                 13,
-                 14,
-                 20,
-                 21,
-                 26,
-                 28,
-                 31,
-                 34,
-                 37]
+    #drop_list = [2,6,8,13,14,16,17,20,24,25,33,37,0,12,38]
     
     dims = stack.shape[-1]
     
@@ -40,13 +31,15 @@ def subset_components(stack,
             names.append(i+1)
     
     return out, names
-    
+
+
 
 def false_colour(stack,
                  r,
                  g,
                  b,
-                 equalize=True):
+                 equalize=True,
+                 plot=True):
     if equalize is True:
         composite = np.dstack((equalize_hist(stack[:,:,r]),
                                equalize_hist(stack[:,:,g]),
@@ -56,11 +49,12 @@ def false_colour(stack,
                                stack[:,:,g],
                                stack[:,:,b]))
 
-
-    plt.imshow(composite)
-    plt.axis('off')
-    plt.show()
-    
+    if plot is True:
+        plt.imshow(composite)
+        plt.axis('off')
+        plt.show()
+        
+    return composite
 
 def get_minmaxpca(pca):
     
@@ -71,10 +65,16 @@ def get_minmaxpca(pca):
 
 def mulit_plot(stack,
                rows_cols = (3,4),
-               name = 'PCA',
+               name = '',
                equalize = True,
                names = None,
-               ):
+               figsize=(9,15),
+               text_offset=(300,-50),
+               fontsize=12,
+               outfile=None,
+               dpi = 300,
+               wspace = 0.01,
+               hspace = 0.35):
     
     rows,cols = rows_cols
     
@@ -85,9 +85,10 @@ def mulit_plot(stack,
     
     figs,axs = plt.subplots(rows,
                             cols, 
-                            figsize=(10,12))
+                            figsize=figsize,
+                            gridspec_kw={'wspace': wspace, 'hspace':hspace})
     
-    plt.subplots_adjust(hspace=0.05, wspace=0.05) 
+    #plt.subplots_adjust(hspace=0.15, wspace=0.08) 
     
     axs = axs.flatten()
     
@@ -101,16 +102,18 @@ def mulit_plot(stack,
         axs[i].axis('off')
         
         if names is None:
-            b_name = [i+1]
+            b_name = i+1
         else:
             b_name = names[i]
 
-        axs[i].text(0,
-                    0, 
+
+        axs[i].text(text_offset[0],
+                    text_offset[1], 
                     f'{name} {b_name}', 
-                    fontsize=10,
+                    fontsize=fontsize,
                     color='black',
-                    ha='center')
+                    ha='left')
         
     #plt.tight_layout()
-    plt.show()
+    #plt.show()
+    plt.savefig(r'C:\Users\ds\OneDrive - Moesgaard Museum\titan\article\figures\working\all_bands_raw.png',dpi=300)

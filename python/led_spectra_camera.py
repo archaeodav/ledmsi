@@ -88,9 +88,10 @@ def load_data(indir=r"C:\Users\ds\OneDrive - Moesgaard Museum\Dokumenter\GitHub\
 
 def plot(wl,
          x,
-         data):
+         data,
+         rgb):
     
-    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(10, 8))
+    fig, axes = plt.subplots(nrows=5, ncols=3, figsize=(14, 25))
 
     # Flatten the axes array for easy iteration
     axes = axes.flatten()
@@ -100,18 +101,44 @@ def plot(wl,
     # Plot on each subplot
     i = 0
     for w in wl:
-        axes[i].plot(x, data[w])
-        axes[i].set_title(w)
-        #axes[i].legend()
-        axes[i].set_xlabel('nm')
-        axes[i].set_xticks([400,500,600,700,800,900])
-        i+=1
+        if not w == '940nm':
+            #axes[i].plot(rgb[0], rgb[1], label='Red', color='red')
+            axes[i].fill_between(rgb[0], rgb[1], color='lightcoral',alpha=0.6)
+    
+            #axes[i].plot(rgb[0], rgb[2], label='Green', color='green')
+            axes[i].fill_between(rgb[0], rgb[2], color='lightgreen',alpha=0.6)
+    
+            #axes[i].plot(rgb[0], rgb[3], label='Blue', color='blue')
+            axes[i].fill_between(rgb[0], rgb[3], color='lightblue',alpha=0.6)
+            
+            y = data[w]
+            
+            x_smooth = np.linspace(x.min(), x.max(), 150)
+            spl = make_interp_spline(x, y,k=3)
+            
+            
+            axes[i].plot(x_smooth, spl(x_smooth),color='black')
+            
+            axes[i].set_xlim(left=350)
+            
+            axes[i].set_title(w,fontsize=18)
+            #axes[i].legend()
+            axes[i].set_xlabel('nm',fontsize=18)
+            axes[i].set_ylabel('DN',fontsize=18)
+            axes[i].set_xticks([400,500,600,700,800,900])
+            axes[i].tick_params(axis='both', which='major', labelsize=16)  
+
+            i+=1
+
+    plt.subplots_adjust(hspace=0.15, wspace=0.08)
+    
 
     # Adjust layout to prevent clipping of titles
     plt.tight_layout()
     
     # Show the plot
-    plt.show()
+    #plt.show()
+    plt.savefig(r'C:\Users\ds\OneDrive - Moesgaard Museum\titan\article\figures\working\led_spectra.png', dpi=300)
     
 def rgb_plot(peaks,
              file=r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\Rasperberry Pi IMX477R.csv"):
@@ -145,19 +172,26 @@ def rgb_plot(peaks,
     plt.plot(x, b, label='Blue', color='blue')
     plt.fill_between(x, b, color='lightblue',alpha=0.6)
     
-    for p in peaks:
-        plt.plot(peaks[p]['x'],peaks[p]['em'],color='black')
+    '''for p in peaks:
+        plt.plot(peaks[p]['x'],peaks[p]['em'],color='black')'''
         
+    plt.xlim(left=300,right=800)
+    
+    plt.ylim(bottom=0)
 
         
 
-    plt.xlabel('Wavelngth (nm)')
-    plt.ylabel('Relative sensitivty')
-    plt.title('Camera')
+    plt.xlabel('Wavelength (nm)')
+    plt.ylabel('Relative sensitivty (DN)')
+    plt.title('Sony IMX477R')
     
     plt.legend()
 
     # Displaying the plot
-    plt.show()
+    
+    plt.tight_layout()
+    
+    #plt.show()
+    plt.savefig(r'C:\Users\ds\OneDrive - Moesgaard Museum\titan\article\figures\working\camera_sensitivity.png', dpi=300)
     
     return x,r,g1,b
