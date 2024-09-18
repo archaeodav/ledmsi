@@ -44,8 +44,22 @@ from skimage.draw import polygon2mask
 import json
 
 class RGBimage():
+    
     def __init__(self,
                  image):
+        '''
+        
+
+        Parameters
+        ----------
+        image : str or ndarray
+            String containing path to image OR numpy array.
+
+        Returns
+        -------
+        None.
+
+        '''
         
         self.image = None
         
