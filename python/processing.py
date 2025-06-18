@@ -848,7 +848,7 @@ class ArrayHandler(ImageDict):
             else:
                 pearsons_matrix_p = np.vstack((pearsons_matrix_p,p))
 
-        return np.dstack((pearsons_matrix_s,pearsons_matrix_s))
+        return np.dstack((pearsons_matrix_s,pearsons_matrix_p))
 
     #def plot_pca_cov()
 
@@ -917,11 +917,6 @@ class SampleMasks():
                     y = r['shape_attributes']['y']
                     w = r['shape_attributes']['width']
                     h = r['shape_attributes']['height']
-
-                    '''poly = [(x,y),
-                            (x+w,y),
-                            (x+w,y+h),
-                            (x,y+h)]'''
 
                     poly = [(y,x),
                             (y,x+w),
