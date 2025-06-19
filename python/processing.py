@@ -701,11 +701,11 @@ class ArrayHandler(ImageDict):
 
         Returns
         -------
-        im : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        W : TYPE
+        im : ndarry
+            ICA ravelled to an image- each band is an ICA component.
+        K : ndarray
+            pre-whiteneing matrix.
+        W : Unmixing matrix
             DESCRIPTION.
 
         """
@@ -730,21 +730,23 @@ class ArrayHandler(ImageDict):
                   stack,
                   n_components=None):
         """
-
+        Calculate PCA transform for image stack. Returns PCA image stretch
 
         Parameters
         ----------
-        stack : TYPE
-            DESCRIPTION.
-        n_components : TYPE, optional
-            DESCRIPTION. The default is None.
+        stack : ndarray
+            input multispectral image stack.
+        n_components : int, optional
+            DESCRIPTION. Number of pca components to calculate. If None = number
+            of bands -1
 
         Returns
         -------
-        out : TYPE
-            DESCRIPTION.
-        pca : TYPE
-            DESCRIPTION.
+        out : ndarray
+            Output PCA stretch image. Each band is a PCA component
+        pca : PCA object
+            PCA transform. Instance of
+            https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html#sklearn.decomposition.PCA.fit.
 
         """
 
@@ -759,31 +761,31 @@ class ArrayHandler(ImageDict):
 
         predict = pca.transform(x)
 
-        cov = pca.get_covariance()
-
         out = self.reshaped_to_rast(stack,n_components,predict)
 
         return out, pca
 
     def stack_kpca(self,
                    stack,
-                   n_components=None):
+                           n_components=None):
         """
-
+        Calculate Kernel PCA transform for image stack. Returns PCA image stretch
 
         Parameters
         ----------
-        stack : TYPE
-            DESCRIPTION.
-        n_components : TYPE, optional
-            DESCRIPTION. The default is None.
+        stack : ndarray
+            input multispectral image stack.
+        n_components : int, optional
+            DESCRIPTION. Number of pca components to calculate. If None = number
+            of bands -1
 
         Returns
         -------
-        out : TYPE
-            DESCRIPTION.
-        pca : TYPE
-            DESCRIPTION.
+        out : ndarray
+            Output PCA stretch image. Each band is a PCA component
+        pca : PCA object
+            PCA transform. Instance of
+            https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.KernelPCA.html
 
         """
 
@@ -798,8 +800,6 @@ class ArrayHandler(ImageDict):
 
         predict = pca.transform(x)
 
-        cov = pca.get_covariance()
-
         out = self.reshaped_to_rast(stack,n_components,predict)
 
         return out, pca
@@ -807,12 +807,13 @@ class ArrayHandler(ImageDict):
 
     def pearsons(self,
                  stack):
+
         """
-
-
+        Runs Pearson's correlation coefecient to examine how autocorrelated /
+        redundant the bands in the image stack are
         Parameters
         ----------
-        stack : TYPE
+        stack : ndarray
             DESCRIPTION.
 
         Returns
