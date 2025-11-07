@@ -1174,13 +1174,13 @@ def run_comps(indir):
 
             print (reflc,uvirc,fluoc)
 
-            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb.tif'),
+            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb.jpeg'),
                       reflc)
 
-            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv.tif'),
+            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv.jpeg'),
                       uvirc)
 
-            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf.tif'),
+            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf.jpeg'),
                       fluoc)
 
             del(a)

@@ -28,6 +28,23 @@ class CameraControl():
                  sys_def=None,
                  calib = None,
                  tempdir = None):
+        '''
+
+
+        Parameters
+        ----------
+        sys_def : TYPE, optional
+            DESCRIPTION. The default is None.
+        calib : TYPE, optional
+            DESCRIPTION. The default is None.
+        tempdir : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        '''
 
 
         self.sys_def = sys_def
@@ -73,11 +90,16 @@ class CameraControl():
         method turns on the white led and provides a preview image to adjust
         focus, framing etc
 
-        Paramaters
-        -------
+        Parameters
+        ----------
+        preview_led : str, optional
+            DESCRIPTION. Dict key for the white LED used for preview
+            The default is "white".
 
         Returns
         -------
+        str
+            DESCRIPTION.
 
         '''
 
