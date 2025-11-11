@@ -1,0 +1,336 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed May 11 20:33:33 2022
+
+@author: dav
+"""
+
+
+import DataHandler
+import board_control
+
+import json
+import os
+import datetime
+
+import subprocess
+import signal
+
+from PIL import Image, ExifTags
+
+import sys
+
+
+class CameraControl():
+    ''' class to control the camera'''
+    def __init__(self,
+                 sys_def=None,
+                 calib = None,
+                 tempdir = None):
+        '''
+
+
+        Parameters
+        ----------
+        sys_def : TYPE, optional
+            DESCRIPTION. The default is None.
+        calib : TYPE, optional
+            DESCRIPTION. The default is None.
+        tempdir : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        '''
+
+
+        self.sys_def = sys_def
+
+        self.calib = calib
+
+        self.tempdir = tempdir
+
+        self.lights = board_control.LightArray()
+
+    def init_imgsys(self):
+        '''
+        method initiates an ImagingSystem object from DataHandler.
+
+        This approach is chosen rather than inheriting ImagingSystem or in the
+        init method of this class becasue we need to be able to redefine this
+        object after calibration.
+
+
+        Paramaters
+        -------
+        None
+
+        Returns
+        -------
+        None
+
+        '''
+
+
+        system = DataHandler.ImagingSystem()
+
+        self.sys_def = system.sys_def
+
+        self.calib =  system.cal
+
+        self.ordered = system.wl_ordered
+
+
+    def preview(self,
+                preview_led = "white"):
+        '''
+        method turns on the white led and provides a preview image to adjust
+        focus, framing etc
+
+        Parameters
+        ----------
+        preview_led : str, optional
+            DESCRIPTION. Dict key for the white LED used for preview
+            The default is "white".
+
+        Returns
+        -------
+        str
+            DESCRIPTION.
+
+        '''
+
+        pin = self.sys_def[preview_led]["pin"]
+
+        self.lights.light_on(pin)
+
+        cmd = 'libcamera-hello -t 0'
+
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             shell=True,
+                             preexec_fn=os.setsid)
+
+        input('Hit the anykey to quit')
+
+        os.killpg(os.getpgid(p.pid),
+                  signal.SIGTERM)
+
+        self.lights.lights_off()
+
+        return 'Done!'
+
+    def calibrate(self,
+                  calib_dir = None,
+                  exposure_factor = 4,
+                  uv_closest = '365',
+                  gain = 1):
+        """
+        Method performs a calibration and records this in a JSON file.
+        Calibration uses auto exposure for each LED wavelength and records the
+        value to file
+
+        It's presumed the target will be a white reflector, so the exposure
+        will be increased using the exposure factor
+
+
+        Paramaters
+        -------
+        calib_dir : str
+            directory to contain the calibration file
+
+        exposure_factor : float
+            exposure correction
+
+        Returns
+        -------
+        str
+            calibration file path.
+
+        """
+
+        if calib_dir is None:
+            calib_dir = os.path.join(os.path.dirname(__file__),
+                                     'calibrations')
+
+            if not os.path.exists(calib_dir):
+                os.mkdir(calib_dir)
+
+        self.calib = {}
+
+        uv_later = []
+
+        #for wavelength in ordered wavlengths
+        for wl in self.ordered:
+            if self.sys_def[wl]['method']=='camera':
+
+                self.lights.light_on(self.sys_def[wl]['pin'])
+
+                f = '%s_%s.jpg' %(self.timestring(),wl)
+
+                oname = os.path.join(calib_dir,f)
+                camera_command = 'libcamera-still -n -r --metering average --gain %s -o %s' %(str(gain),oname)
+
+                os.system(camera_command)
+
+                self.lights.lights_off()
+
+                img = Image.open(oname)
+
+                calib_exp_time = (img._getexif()[33434]*1000000)*exposure_factor
+
+                print (img._getexif()[33434]*1000000)
+                print (wl,calib_exp_time)
+
+                self.calib[wl]=int(calib_exp_time)
+
+                self.calb['%s_image' %(wl)] = f
+
+            else:
+                if self.sys_def[wl]['method']=='uv':
+                    uv_later.append(wl)
+
+        for wl in uv_later:
+            self.calib[wl]=self.calib[uv_closest]*9
+
+
+        # log all this to JSON
+
+        fname = os.path.join(calib_dir,'calib_'+self.timestring()+'.json')
+
+        with open(fname, 'w') as ofile:
+            json.dump(self.calib,
+                      ofile,
+                      sort_keys=True,
+                      indent=4,
+                      ensure_ascii=False)
+
+            ofile.close()
+
+        # reload the system def
+        self.init_imgsys()
+
+
+    def acquire_stack(self,
+                      odir,
+                      fname,
+                      auto_id = True):
+        """
+        This function acquires the full stack of images under each wavelength
+
+        Parameters
+        ----------
+        odir : str
+            Output directory.
+        fname : str
+            root filename.
+        auto_id : bool, optional
+            Whether io implement automatic ID generation. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        if auto_id is True:
+            ids = os.listdir(os.path.join(odir,fname))
+            ids_int = []
+            for i in ids:
+                try:
+                    n = int(i.split('.')[0].split('_')[-1])
+                    ids_int.append(n)
+                except(ValueError):
+                    ids_int.append(-1)
+
+            last_id = max(ids_int)
+
+            if not last_id == -1:
+                fname= '%s_%s' %(fname,last_id)
+            else:
+                fname = '%s_0' %(fname)
+
+        odata = DataHandler.ImageDict(odir,fname)
+
+        odata.init_image_stack()
+
+        for wl in self.ordered:
+
+            im_name = '%s_%s.jpg' %(fname,wl)
+
+            oname = os.path.join(odir,fname,im_name)
+
+            self.lights.light_on(self.sys_def[wl]['pin'])
+
+            camera_command = 'libcamera-still -n -r --shutter %s --gain %s --immediate -o %s' %(str(self.calib[wl]),str(self.calib['gain']),oname)
+
+            os.system(camera_command)
+
+            self.lights.lights_off()
+
+            odata.image_data(fname,wl)
+
+        odata.save_dict()
+
+
+    def timestring(self,
+                   long = False):
+
+        '''
+        method returns current date / time as a string for making unique
+        filenames
+
+        Paramaters
+        -------
+        long : bool
+            if long include microseconds, else just seconds
+
+        Returns
+        -------
+        str
+            datetime string
+
+        '''
+
+        current_time = datetime.datetime.now()
+
+        if long is True:
+            ts = current_time.strftime("%Y-%m-%d-%H%M%S-%f")
+
+        else:
+            ts = current_time.strftime("%Y-%m-%d-%H%M%S")
+
+        return ts
+
+
+if __name__ == ('__main__'):
+    c = CameraControl(tempdir="/home/dav/temp")
+
+    c.init_imgsys()
+
+    method = sys.argv[1]
+
+    if method == '--c':
+        c.calibrate()
+
+    elif method == '--s':
+        odir = sys.argv[2]
+
+        fname = sys.argv[3]
+
+        c.acquire_stack(odir, fname)
+
+    elif method == '--p':
+        c.preview()
+
+    else:
+        print("To run SysController you need to use one of the following flags:\n",
+              "   --c run the calibration routine\n",
+              "   --s acquire an image stack with the following additional parameters:\n",
+              "      output directory\n",
+              "      image stack name\n",
+              "   --p preview")

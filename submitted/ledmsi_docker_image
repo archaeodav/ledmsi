@@ -1,0 +1,21 @@
+# Use an official lightweight Python base image
+FROM python:3.11-slim
+
+# Set a working directory inside the container
+WORKDIR /titan_LEDMSI_data
+
+# Copy requirements first for caching
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Copy your code and data into the container
+COPY code/python ./code/python/
+COPY data/ ./data/
+
+# Set environment variable so Python prints immediately
+ENV PYTHONUNBUFFERED=1
+
+# Set bash as the default entrypoint
+ENTRYPOINT ["/bin/bash"]
