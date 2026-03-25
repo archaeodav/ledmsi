@@ -22,6 +22,8 @@ from sklearn.decomposition import fastica
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import MinMaxScaler
 
+
+
 from skimage import io
 
 from skimage.color import rgb2hsv
@@ -34,6 +36,8 @@ from skimage.filters import threshold_otsu
 from skimage.filters import threshold_mean
 from skimage.filters import threshold_li
 from skimage.measure import pearson_corr_coeff
+
+from skimage.restoration import denoise_bilateral
 
 from skimage.draw import polygon2mask
 
@@ -48,219 +52,253 @@ class FluoStack(ImageDict):
     def __init__(self,
                  odir,
                  fname):
-        
+
        super().__init__(odir, fname)
-       
+
        self.load_imdict()
-       
-   
+
+
     def gen_fluo_stack_np(self,
-                          save_stacks=True,
+                          save_stacks=False,
                           rotate=3):
-         
+
          '''
          Method converts images to a numpy array and saves them as a *.npy file,
          saves a pointer to this array in the image dict
-         
+
          Parameters
          -------
          save_stack : bool
              save the image stack to disk?
-             
+
          Returns
          -------
          ndarray
-         
+
          '''
-         
+
          hstack = None
          sstack = None
          vstack = None
-         
-         hdiff = None
-         
 
-         
+         hdiff = None
+
+
+
          for wl in self.wl_ordered:
-             
+
              print (self.odir, self.fname)
 
              image = '%s_%s.dng' %(self.fname,wl)
-             
+
              image = os.path.join(self.odir,self.fname,image)
-             
+
              im = RGBimage(image).image
-             
+
              im = self.rescale(im)
-             
+
              hsvim = rgb2hsv(im)
-             
-             him = hsvim[:,:,0] 
+
+             him = hsvim[:,:,0]
              sim = hsvim[:,:,1]
              vim = hsvim[:,:,2]
-             
+
              himdiff = self.h_diff(him)
-             
+
              if hstack is None:
                  hstack = him
-                 
+
              else:
                  hstack = np.dstack((hstack,him))
-                 
+
              if sstack is None:
                  sstack = sim
-                 
+
              else:
                  sstack = np.dstack((sstack,sim))
-                 
+
              if vstack is None:
                  vstack = vim
-                 
+
              else:
                  vstack = np.dstack((vstack,vim))
-                 
+
              if hdiff is None:
                  hdiff = himdiff
-                
+
              else:
                  hdiff = np.dstack((hdiff,himdiff))
-                 
-                 
-          
+
+
+
          if rotate > 0:
              hstack = np.rot90(hstack,rotate)
              sstack = np.rot90(sstack,rotate)
              vstack = np.rot90(vstack,rotate)
              hdiff = np.rot90(hdiff,rotate)
 
-          
+
          if save_stacks is True:
             self.save_stack(hstack, 'hue')
             self.save_stack(sstack, 'sat')
             self.save_stack(sstack, 'val')
             self.save_stack(hdiff, 'hue_diff')
-              
-              
+
+
          return hstack,vstack,sstack,hdiff
-     
+
     def save_stack(self,stack,stack_name):
          npy = '%s_%s%s' %(self.fname,stack_name,'.npy')
          np.save(os.path.join(self.img_dir,npy),stack)
-         
+
     def mean_hue(self,h):
-         
+
          mean = np.median(h)
-         
+
          #mean = np.mean(h)
-         
+
          return mean
-     
+
     def h_diff(self,
                h,
                calib_image = None):
-         
-         
-        
+
+         """
+         Method calculates angular difference between mean hue and local hue,
+         either using a calibration image or using a mean of the image being
+         analysed
+
+         Parameters
+         ----------
+         calib_image : str or ndarray, optional
+             Input image. The default is None.
+
+         Returns
+         -------
+         ndarray
+             Absolute angular difference of hue between reference value and
+             input image.
+
+         """
+
+
+
          c_h = self.mean_hue(h)
-         
+
          #atan2(sin(x-y), cos(x-y))
-         
-         #diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
-         
-         diff = h-c_h
-         
+
+         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
+
+         #diff = h-c_h
+
          return np.abs(diff)
 
 
     def reshape_stack(self,
                       stack):
-        
+
         reshaped = np.reshape(stack,
                               ((stack.shape[0]*stack.shape[1]),
                               stack.shape[2]))
-        
+
         return reshaped
-    
+
     def reshaped_to_rast(self,
                          stack,
                          dims,
                          reshaped):
-        
+
         rast = np.reshape(reshaped,
                           (stack.shape[0],
                            stack.shape[1],
                            dims))
-        
+
         return rast
-    
+
     def rescale(self,
                 rgb_image):
-        
-        #print (rgb_image.shape)
-        
-        
+
+
+
         reshaped = self.reshape_stack(rgb_image)
-        #print (reshaped.shape)
-        
-        
-        '''out = None
-        
-        for band in range(rgb_image.shape[-1]):
-            
-            scaler = MinMaxScaler(feature_range=(0,255))
-            data = scaler.fit_transform(rgb_image[:,:,band])
-            
-            if out is None:
-                out = data
-                
-            else:
-                out = np.dstack((out,data))'''
-                
+
+
+
+
         scaler = MinMaxScaler(feature_range=(0,255))
         out = scaler.fit_transform(reshaped)
-        
+
         out = self.reshaped_to_rast(rgb_image, 3, out)
-        
+
         return out
-    
+
     def stack_ica(self,
                   stack,
                   n_components=None):
-        
+
         if n_components is None:
             n_components = stack.shape[-1]
-        
-        
+
+
         K, W, S = fastica(self.reshape_stack(stack),
                           n_components=n_components,
                           whiten='unit-variance',
-                          tol=0.01,
+                          tol=0.001,
                           max_iter=600,
-                          whiten_solver='eigh')
-        
-        im = self.reshaped_to_rast(stack, 
+                          whiten_solver='svd',
+                          random_state=42)
+
+        im = self.reshaped_to_rast(stack,
                                    n_components,
                                    S)
-        
+
         return im, K, W
-    
+
     def stack_pca(self,
                   stack,
                   n_components=None):
-        
+
         if n_components is None:
             n_components = stack.shape[-1]
-        
+
         pca = PCA(n_components=n_components)
-        
+
         x = self.reshape_stack(stack)
-        
+
         pca.fit(x)
-        
+
         predict = pca.transform(x)
-        
+
         cov = pca.get_covariance()
-        
+
         out = self.reshaped_to_rast(stack,n_components,predict)
-        
+
         return out, pca
+
+    def denoise(self,
+                stack):
+        """
+        removes noise from image stack
+
+        Parameters
+        ----------
+        stack : ndarray
+            input  spectral image band stack
+
+        Returns
+        -------
+        out : ndarray
+            noise removed stack.
+
+        """
+
+        out = None
+
+        for i in range(stack.shape[2]):
+            denoised=denoise_bilateral(stack[:,:,i])
+
+            if out is None:
+                out = denoised
+            else:
+                out = np.dstack((out,denoised))
+
