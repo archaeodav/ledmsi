@@ -38,6 +38,7 @@ def stdminmax(arr, n):
     return vmin,vmax
 
 
+
 def subset_components(stack,
                       drop_list=None):
     '''
@@ -135,18 +136,36 @@ def false_colour(stack,
 
         fpath = root_dir / 'output' / f
 
-        plt.tight_layout(pad=0)
-
-        plt.savefig(fpath, bbox_inches='tight', pad_inches=0)
+        plt.savefig(fpath)
 
         plt.close()
 
 
     return composite
 
+
+
 def single_im(im,
               name,
               stdev= 0.5):
+    '''
+    Method performs stretch to supplied number of standard deviations and saves 
+    it
+
+    Parameters
+    ----------
+    im : np.ndarry
+        DESCRIPTION. The image
+    name : str
+        DESCRIPTION. Name to save it as
+    stdev : float or int, optional
+        DESCRIPTION. The default is 0.5.
+
+    Returns
+    -------
+    None.
+
+    '''
 
     vmin,vmax = stdminmax(im,
                           stdev)
@@ -165,7 +184,6 @@ def single_im(im,
     plt.savefig(fpath)
 
     plt.close()
-
 
 
 def multi_plot(stack,
@@ -372,7 +390,9 @@ def load_stack(path):
 
     return a,stack[:,:,3:]
 
-def run_pca(a,stack):
+def run_pca(a,
+            stack,
+            save_np = False):
     '''
     run PCA on stack and saves multi plots and false colour composite
 
@@ -400,11 +420,14 @@ def run_pca(a,stack):
                fname = 'Fig7_pca_multi.png')
 
     #false_colour(pca[0], 0, 1, 2, name='PCA')
+    
+    if save_np is True:
+        np.save(root_dir / 'output' / 'PCA_Image.npy',
+                pca[0])
 
-    np.save(root_dir / 'output' / 'PCA_Image.npy',
-            pca[0])
-
-def run_ica(a,stack):
+def run_ica(a,
+            stack,
+            save_np=False):
     '''
     run ICA on stack and saves multi plots and false colour composite
 
@@ -435,16 +458,17 @@ def run_ica(a,stack):
                fname = 'Fig9_ica_multi.png')
 
     #false_colour(ica[0], 0, 1, 6, name='ICA')
-
-    np.save(root_dir / 'output' / 'ICA_Image.npy',
-            ica[0])
+    
+    if save_np:
+        np.save(root_dir / 'output' / 'ICA_Image.npy',
+                ica[0])
 
     return ica
 
-
 def run_fica(a,stack):
     '''
-    run ICA on stack and saves multi plots and false colour composite
+    run ICA on flourescence stack and saves multi plots and false colour 
+    composite
 
     Parameters
     ----------
@@ -480,7 +504,6 @@ def run_fica(a,stack):
     return ica
 
 
-
 if __name__ == '__main__':
 
     if sys.argv[1]=='folder':
@@ -500,25 +523,30 @@ if __name__ == '__main__':
 
         full_data = root_dir / 'data' / 'images' / 'full_images' / 'watts_no_filter_6'
 
+        print ('Loading data')
+
         fs = load_stack(full_data)
 
         s = np.load(data)
 
+        print ('Plotting raw per band luminance')
+        plot_all_bands(s)
 
-        '''plot_all_bands(s)
-
-        pca = run_pca(fs[0],fs[1])
+        print ('running PCA')
+        pca = run_pca(fs[0],s)
 
         false_colour(pca[0], 0, 1, 2, name='Fig8a_PCA', plot = True)
         false_colour(pca[0], 3, 4, 5, name='Fig8b_PCA', plot = True)
         false_colour(pca[0], 6, 7, 8, name='Fig8c_PCA', plot = True)
-        false_colour(pca[0], 9, 10, 11, name='Fig8d_PCA', plot = True)'''
+        false_colour(pca[0], 9, 10, 11, name='Fig8d_PCA', plot = True)
 
-
+        
+        print ('running ICA')
         ica = run_ica(fs[0],s)
 
-        false_colour(ica[0], 9, 29, 28, name='Fig10l_ICA', plot=True)
-        false_colour(ica[0], 18, 28, 42, name='Fig10r_ICA', plot=True)
+        print ('plotting ICA')
+        false_colour(ica[0], 6, 3, 9, name='Fig10l_ICA', plot=True)
+        false_colour(ica[0], 17, 9, 40, name='Fig10r_ICA', plot=True)
 
     elif sys.argv[1]=='fluo':
         hdata = root_dir / 'data' / 'images' / 'full_images' / 'watts_no_filter_2'
@@ -539,7 +567,4 @@ if __name__ == '__main__':
         full_data = root_dir / 'data' / 'images' / 'full_images' / 'watts_no_filter_2'
         fs = load_stack(full_data)
         single_im(fs[1][:,:,-2], 'fig13_upperright_365nm_green')
-
-
-
 

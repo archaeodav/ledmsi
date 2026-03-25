@@ -187,11 +187,15 @@ class FluoStack(ImageDict):
 
          #atan2(sin(x-y), cos(x-y))
 
-         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
+         #diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
 
          #diff = h-c_h
+         
+         
+         diff = np.arctan2(np.sin(h-c_h),np.cos(h-c_h))
 
-         return np.abs(diff)
+
+         return diff
 
 
     def reshape_stack(self,
@@ -243,10 +247,10 @@ class FluoStack(ImageDict):
         K, W, S = fastica(self.reshape_stack(stack),
                           n_components=n_components,
                           whiten='unit-variance',
-                          tol=0.001,
-                          max_iter=600,
-                          whiten_solver='svd',
-                          random_state=42)
+                          tol=0.0001,
+                          max_iter=1000,
+                          whiten_solver='eigh',
+                          random_state=0)
 
         im = self.reshaped_to_rast(stack,
                                    n_components,
