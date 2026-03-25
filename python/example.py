@@ -122,27 +122,25 @@ def false_colour(stack,
         composite = np.dstack((stack[:,:,r],
                                stack[:,:,g],
                                stack[:,:,b]))
-
-    '''composite = rescale_intensity(composite,
+    composite = rescale_intensity(composite,
                                   in_range='image',
-                                  out_range=(0,255))'''
-
+                                  out_range=(0,255))
     if plot is True:
-        plt.imshow(composite)
-        plt.axis('off')
-        #plt.show()
+        dpi = 300
+        height, width = composite.shape[:2]
+        figsize = (width / dpi, height / dpi)
 
-        f = '%s_%s_%s_%s.png' % (name,r,g,b)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.imshow(composite)
+        ax.axis('off')
 
+        f = '%s_%s_%s_%s.jpg' % (name, r, g, b)
         fpath = root_dir / 'output' / f
-
-        plt.savefig(fpath)
-
-        plt.close()
-
+        fig.savefig(fpath, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
 
     return composite
-
 
 
 def single_im(im,
@@ -167,23 +165,21 @@ def single_im(im,
 
     '''
 
-    vmin,vmax = stdminmax(im,
-                          stdev)
-
-    plt.imshow(im,
-               vmin=vmin,
-               vmax=vmax)
-
-    plt.axis('off')
-    plt.show()
-
+    vmin, vmax = stdminmax(im, stdev)
+    
+    dpi = 300
+    height, width = im.shape[:2]
+    figsize = (width / dpi, height / dpi)
+    
+    fig = plt.figure(figsize=figsize, dpi=dpi)
+    ax = fig.add_axes([0, 0, 1, 1])  # Full figure, no padding
+    ax.imshow(im, vmin=vmin, vmax=vmax)
+    ax.axis('off')
+    
     f = '%s.png' % (name)
-
     fpath = root_dir / 'output' / f
-
-    plt.savefig(fpath)
-
-    plt.close()
+    fig.savefig(fpath, dpi=dpi, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
 
 
 def multi_plot(stack,
@@ -561,8 +557,10 @@ if __name__ == '__main__':
 
         ica = run_fica(h,a.denoise(h_stack[3]))
         #ica = run_fica(h_stack[3])
+        
+        false_colour(ica[0], 5, 6, 9, name='Fig10r_ICA', plot=True)
 
-        single_im(h_stack[3][:,:,14], 'fig13_lowerleftt_365nm_huediff',stdev=1)
+        hdiff = single_im(h_stack[3][:,:,14], 'fig13_lowerleftt_365nm_huediff',stdev=1)
 
         full_data = root_dir / 'data' / 'images' / 'full_images' / 'watts_no_filter_2'
         fs = load_stack(full_data)
