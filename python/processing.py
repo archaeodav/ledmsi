@@ -11,6 +11,8 @@ import numpy as np
 
 import os
 
+from pathlib import Path
+
 import rawpy
 
 from DataHandler import ImageDict
@@ -694,7 +696,7 @@ class ArrayHandler(ImageDict):
 
         Parameters
         ----------
-        stack : TYPE
+        stack : np_array
             DESCRIPTION.
         n_components : TYPE, optional
             DESCRIPTION. The default is None.
@@ -715,11 +717,28 @@ class ArrayHandler(ImageDict):
             n_components = stack.shape[-1]
 
 
+        '''K, W, S = fastica(self.reshape_stack(stack),
+                          n_components=n_components,
+                          whiten='unit-variance',
+                          tol = 0.01,
+                          max_iter = 300,
+                          algorithm='deflation')'''
+
         K, W, S = fastica(self.reshape_stack(stack),
                           n_components=n_components,
                           whiten='unit-variance',
-                          tol = 0.01)
-
+                          tol = 0.0001,
+                          max_iter = 10000,
+                          whiten_solver='eigh',
+                          random_state=42)
+        
+    
+        '''K, W, S = fastica(self.reshape_stack(stack),
+                         n_components=n_components,
+                         max_iter = 9000,
+                         tol = 0.0005,
+                         random_state=42)'''
+    
         im = self.reshaped_to_rast(stack,
                                    n_components,
                                    S)
@@ -851,7 +870,7 @@ class ArrayHandler(ImageDict):
 
         return np.dstack((pearsons_matrix_s,pearsons_matrix_p))
 
-    #def plot_pca_cov()
+
 
 class SampleMasks():
     def __init__(self):
@@ -1009,7 +1028,8 @@ class SampleMasks():
         """
         for m, image in image_mask_names:
             mask = os.path.split(m)[-1]
-            if image.endswith('npy'):
+            print ('BUMBUMBUBM',image, type(image))
+            if str(image).endswith('.npy'):
                 img = np.load(image)
             else:
                 img = io.imread(image)
@@ -1123,32 +1143,29 @@ class SampleMasks():
 
         return data,target,feature_names,classes
 
-    def test(self):
-        self.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
-                               r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-        self.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-        self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1.npy"),
-                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4.npy"),
-                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6.npy")])
-
-    def rgb_test(self):
-        self.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
-                               r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-        self.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-        self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1_comp_rr_gg_bb.tif"),
-                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4_comp_rr_gg_bb.tif"),
-                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6_comp_rr_gg_bb.tif")])
-
-    def fluo_test(self):
-        self.load_masks_from_json(r"C:\Users\ds\Downloads\Titan(2).json",
-                               r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-        self.sample_masks(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks")
-        self.sampler([(r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_1_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_1\watts_no_filter_1_hue_diff.npy"),
-                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_4_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_4\watts_no_filter_4_hue_diff.npy"),
-                   (r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\masks\watts_no_filter_6_comp_rir_gg_buv.jpeg",r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\sm\No_filter\watts_no_filter_6\watts_no_filter_6_hue_diff.npy")])
 
 
-def run_comps(indir):
+def run_comps(indir=None):
+    '''
+    Function generates false colour composites from LED spectra
+
+    Parameters
+    ----------
+    indir : str / path
+        DESCRIPTION. Input path for directory containing images
+
+    Returns
+    -------
+    None.
+
+    '''
+
+    if indir is None:
+        indir = Path.cwd().parents[1] / 'data' / 'images' / 'full_images'
+
+        outdir = Path.cwd().parents[1] / 'output'
+
+
     for d in os.listdir(indir):
         print (d)
         if os.path.isdir(os.path.join(indir,d)):
@@ -1174,13 +1191,17 @@ def run_comps(indir):
 
             print (reflc,uvirc,fluoc)
 
-            io.imsave(os.path.join(indir,d+'_comp_rr_gg_bb.jpeg'),
+            rgb_fname = d+'_comp_rr_gg_bb.tif'
+            irgb_fname = d+'_comp_rir_gg_buv.tif'
+            irfuvf_fname = d+'_comp_rrirf_gg_bbuvf.tif'
+
+            io.imsave(outdir / rgb_fname,
                       reflc)
 
-            io.imsave(os.path.join(indir,d+'_comp_rir_gg_buv.jpeg'),
+            io.imsave(outdir / irgb_fname,
                       uvirc)
 
-            io.imsave(os.path.join(indir,d+'_comp_rrirf_gg_bbuvf.jpeg'),
+            io.imsave(outdir / irfuvf_fname,
                       fluoc)
 
             del(a)
