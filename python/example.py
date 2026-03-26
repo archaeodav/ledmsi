@@ -122,9 +122,9 @@ def false_colour(stack,
         composite = np.dstack((stack[:,:,r],
                                stack[:,:,g],
                                stack[:,:,b]))
-    composite = rescale_intensity(composite,
+    '''composite = rescale_intensity(composite,
                                   in_range='image',
-                                  out_range=(0,255))
+                                  out_range=(0,255))'''
     if plot is True:
         dpi = 300
         height, width = composite.shape[:2]
@@ -420,6 +420,8 @@ def run_pca(a,
     if save_np is True:
         np.save(root_dir / 'output' / 'PCA_Image.npy',
                 pca[0])
+        
+    return pca
 
 def run_ica(a,
             stack,
@@ -445,13 +447,7 @@ def run_ica(a,
     ica = a.stack_ica(stack, n_components=None)
 
 
-    multi_plot(ica[0],
-               name='ICA',
-               rows_cols=(7,6),
-               figsize=(9,15),
-               text_offset=(440,-50),
-               fontsize=8,
-               fname = 'Fig9_ica_multi.png')
+    
 
     #false_colour(ica[0], 0, 1, 6, name='ICA')
     
@@ -539,6 +535,60 @@ if __name__ == '__main__':
         
         print ('running ICA')
         ica = run_ica(fs[0],s)
+        
+        multi_plot(ica[0],
+                   name='ICA',
+                   rows_cols=(7,6),
+                   figsize=(9,15),
+                   text_offset=(440,-50),
+                   fontsize=8,
+                   fname = 'ica_multi.png')
+        
+        d = subset_components(ica[0],drop_list=[0,
+                                                1,
+                                                2,
+                                                4,
+                                                5,
+                                                7,
+                                                8,
+                                                10,
+                                                11,
+                                                12,
+                                                13,
+                                                14,
+                                                15,
+                                                16,
+                                                18,
+                                                19,
+                                                20,
+                                                21,
+                                                22,
+                                                23,
+                                                25,
+                                                26,
+                                                27,
+                                                28,
+                                                29,
+                                                30,
+                                                31,
+                                                32,
+                                                35,
+                                                36,
+                                                37,
+                                                38,
+                                                39,
+                                                41,
+                                                42])
+        
+        multi_plot(d[0],
+                   names=d[1],
+                   name='ICA',
+                   rows_cols=(2,4),
+                   figsize=(15,9),
+                   text_offset=(440,-50),
+                   fontsize=8,
+                   fname = 'Fig9_ica_multi.png')
+        
 
         print ('plotting ICA')
         false_colour(ica[0], 6, 3, 9, name='Fig10l_ICA', plot=True)
@@ -560,7 +610,7 @@ if __name__ == '__main__':
         
         false_colour(ica[0], 5, 6, 9, name='Fig10r_ICA', plot=True)
 
-        hdiff = single_im(h_stack[3][:,:,14], 'fig13_lowerleftt_365nm_huediff',stdev=1)
+        hdiff = single_im(np.abs(h_stack[3][:,:,15]), 'fig13_lowerleftt_365nm_huediff',stdev=1)
 
         full_data = root_dir / 'data' / 'images' / 'full_images' / 'watts_no_filter_2'
         fs = load_stack(full_data)

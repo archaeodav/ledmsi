@@ -6,6 +6,8 @@ Created on Fri Nov 10 10:37:19 2023
 """
 
 import os
+from pathlib import Path
+
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -13,6 +15,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import peak_widths
 
 from scipy.interpolate import make_interp_spline
+
+root_dir = Path.cwd().parents[1]
 
 def spectra(file):
     '''
@@ -100,8 +104,9 @@ def extract_peaks(data,
 
     return out
 
-def load_data(indir=r"C:\Users\ds\OneDrive - Moesgaard Museum\Dokumenter\GitHub\ledmsi\led_spectra\final"):
+def load_data(indir=None):
     data = {}
+
 
     x = None
     for file in os.listdir(indir):
@@ -170,10 +175,9 @@ def plot(wl,
 
     # Show the plot
     #plt.show()
-    plt.savefig(r'C:\Users\ds\OneDrive - Moesgaard Museum\titan\article\figures\working\led_spectra.png', dpi=300)
+    plt.savefig(root_dir / "output" / "Fig3_led_spectra.png", dpi=300)
 
-def rgb_plot(peaks,
-             file=r"C:\Users\ds\OneDrive - Moesgaard Museum\titan\Rasperberry Pi IMX477R.csv"):
+def rgb_plot(file=None):
 
     data = np.loadtxt(file,skiprows=1,delimiter=',')
     print (data.shape)
@@ -204,8 +208,6 @@ def rgb_plot(peaks,
     plt.plot(x, b, label='Blue', color='blue')
     plt.fill_between(x, b, color='lightblue',alpha=0.6)
 
-    '''for p in peaks:
-        plt.plot(peaks[p]['x'],peaks[p]['em'],color='black')'''
 
     plt.xlim(left=300,right=800)
 
@@ -224,6 +226,24 @@ def rgb_plot(peaks,
     plt.tight_layout()
 
     #plt.show()
-    plt.savefig(r'C:\Users\ds\OneDrive - Moesgaard Museum\titan\article\figures\working\camera_sensitivity.png', dpi=300)
+    plt.savefig(root_dir / "output" / "Fig2_camera_sensitivity.png", dpi=300)
 
     return x,r,g1,b
+
+
+
+if __name__ == '__main__':
+    root_dir = Path.cwd().parents[1]
+    sensor_sens = root_dir / "data" / "sensor_sensitivity" / "Rasperberry Pi IMX477R.csv"
+    s = root_dir / "data" / "led_spectra"
+
+    rgb = rgb_plot(sensor_sens)
+    led_spectra = load_data(s)
+    plot(led_spectra[0],
+         led_spectra[1],
+         led_spectra[2],
+         rgb)
+
+
+
+
